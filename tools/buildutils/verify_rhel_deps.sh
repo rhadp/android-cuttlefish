@@ -48,7 +48,7 @@ echo ""
 # Check if running on RHEL-compatible system
 if [ -f /etc/os-release ]; then
     source /etc/os-release
-    if [[ "$ID" =~ ^(rhel|fedora)$ ]]; then
+    if [[ "$ID" =~ ^(rhel|centos|fedora)$ ]]; then
         echo -e "${GREEN}✓${NC} Running on RPM-based system: $PRETTY_NAME"
         can_test_dnf=true
     else

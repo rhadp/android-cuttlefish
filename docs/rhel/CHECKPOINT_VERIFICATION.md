@@ -5,7 +5,7 @@ This document describes how to verify the RHEL package build process (Task 10 ch
 ## Prerequisites
 
 ### System Requirements
-- RHEL 10 or Fedora (latest) - (RHEL 8/9 supported in compatibility mode)
+- RHEL 10, CentOS Stream 10, or Fedora 43 (RHEL 9 deprecated)
 - Minimum 8GB RAM
 - Minimum 20GB free disk space
 - Internet connection for repository access
@@ -55,7 +55,10 @@ If you prefer to verify manually, follow these steps:
 cat /etc/os-release
 ```
 
-Expected: `ID=rhel` (or `fedora`) and appropriate `VERSION_ID` (10.x for RHEL, 39+ for Fedora)
+Expected: `ID=rhel` (or `centos`, or `fedora`) with `VERSION_ID`:
+- RHEL: 10.x (9.x deprecated)
+- CentOS Stream: 10
+- Fedora: 43
 
 #### Step 2: Run Build
 ```bash
@@ -120,7 +123,7 @@ Expected: No errors, warnings should be filtered by `.rpmlintrc`
 Use this checklist to track verification progress:
 
 ### Build Environment
-- [ ] Running on RHEL 10 or Fedora (latest)
+- [ ] Running on RHEL 10, CentOS Stream 10, or Fedora 43
 - [ ] Minimum 8GB RAM available
 - [ ] Minimum 20GB disk space available
 - [ ] Internet connection active

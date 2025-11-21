@@ -1,6 +1,6 @@
 # Cuttlefish RHEL Troubleshooting Guide
 
-This document provides solutions to common problems when running Cuttlefish on RHEL 10 and Fedora (latest).
+This document provides solutions to common problems when running Cuttlefish on RHEL 10, CentOS Stream 10, and Fedora 43.
 
 ## Table of Contents
 

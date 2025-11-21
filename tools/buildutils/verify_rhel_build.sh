@@ -122,11 +122,23 @@ function test_verify_os() {
             OS_VERSION="${VERSION_ID%%.*}"
             if [ "${OS_VERSION}" == "10" ]; then
                 echo_pass "OS version: ${VERSION_ID} (RHEL 10 - fully supported)"
-            elif [ "${OS_VERSION}" == "9" ] || [ "${OS_VERSION}" == "8" ]; then
-                echo_warn "OS version: ${VERSION_ID} (RHEL ${OS_VERSION} - compatibility mode)"
+            elif [ "${OS_VERSION}" == "9" ]; then
+                echo_warn "OS version: ${VERSION_ID} (RHEL 9 - deprecated, upgrade to RHEL 10)"
             else
                 echo_fail "OS version: ${VERSION_ID} is not supported"
-                echo_error "This script requires RHEL 8, 9, or 10"
+                echo_error "This script requires RHEL 9 or 10"
+                exit 1
+            fi
+            ;;
+        centos)
+            echo_pass "OS type: ${NAME} (${ID})"
+            echo_test "Checking CentOS Stream version..."
+            OS_VERSION="${VERSION_ID}"
+            if [ "${OS_VERSION}" == "10" ]; then
+                echo_pass "OS version: ${VERSION_ID} (CentOS Stream 10 - fully supported)"
+            else
+                echo_fail "OS version: ${VERSION_ID} is not supported"
+                echo_error "This script requires CentOS Stream 10 only"
                 exit 1
             fi
             ;;
@@ -134,19 +146,17 @@ function test_verify_os() {
             echo_pass "OS type: ${NAME} (${ID})"
             echo_test "Checking Fedora version..."
             OS_VERSION="${VERSION_ID}"
-            if [ "${OS_VERSION}" -ge 39 ]; then
-                echo_pass "OS version: ${VERSION_ID} (Fedora - fully supported)"
-            elif [ "${OS_VERSION}" -ge 38 ]; then
-                echo_warn "OS version: ${VERSION_ID} (Fedora - older version)"
+            if [ "${OS_VERSION}" == "43" ]; then
+                echo_pass "OS version: ${VERSION_ID} (Fedora 43 - fully supported)"
             else
-                echo_fail "OS version: ${VERSION_ID} is too old"
-                echo_error "This script requires Fedora 38 or newer"
+                echo_fail "OS version: ${VERSION_ID} is not supported"
+                echo_error "This script requires Fedora 43 only"
                 exit 1
             fi
             ;;
         *)
             echo_fail "OS type: ${ID} is not supported"
-            echo_error "This script requires RHEL or Fedora"
+            echo_error "This script requires RHEL 10, CentOS Stream 10, or Fedora 43"
             exit 1
             ;;
     esac

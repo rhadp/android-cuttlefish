@@ -520,11 +520,11 @@
   - [x] 9.1 Create tools/buildutils/install_rhel10_deps.sh
     - [x] 9.1.1 Detect RHEL version and derivative
       - Parse /etc/os-release for ID and VERSION_ID
-      - Verify RHEL 10 or compatible (Fedora latest)
+      - Verify RHEL 10, CentOS Stream 10, or Fedora 43
     - [x] 9.1.2 Set repository names based on OS version
-      - For RHEL 10: use "crb"
-      - For RHEL 8: use "powertools"
-      - For Fedora: use default repositories (no CRB/PowerTools needed)
+      - For RHEL 10/9: use "crb"
+      - For CentOS Stream 10: use "crb"
+      - For Fedora 43: use default repositories (no CRB needed)
       - Handle version-specific repository naming
     - [x] 9.1.3 Enable required repositories
       - Enable EPEL repository (dnf install epel-release)
@@ -547,7 +547,7 @@
 
   - [x] 9.2 Create tools/buildutils/build_rpm_packages.sh
     - Detect OS type using /etc/os-release
-    - Verify RHEL 10 or compatible (Fedora latest)
+    - Verify RHEL 10, CentOS Stream 10, or Fedora 43
     - Call install_rhel10_deps.sh
     - Setup ~/rpmbuild directory structure (rpmdev-setuptree)
     - Extract version using get_version.sh script: `VERSION=$(get_version.sh base/debian/changelog)`
@@ -563,7 +563,7 @@
 
   - [x] 9.3 Update tools/buildutils/build_packages.sh for OS detection
     - Add OS detection at the beginning (check /etc/os-release)
-    - If RHEL/Fedora detected, call build_rpm_packages.sh
+    - If RHEL/CentOS Stream/Fedora detected, call build_rpm_packages.sh
     - If Debian/Ubuntu detected, call existing Debian build logic
     - Exit with error for unsupported OS
     - _Requirements: 9.3_
@@ -572,7 +572,7 @@
   - Created tools/buildutils/verify_rhel_build.sh - Automated verification script
   - Created docs/rhel/CHECKPOINT_VERIFICATION.md - Comprehensive verification guide
   - Verification script tests:
-    - [x] Verifies OS type and version (RHEL 8/9/10, Fedora latest)
+    - [x] Verifies OS type and version (RHEL 9/10, CentOS Stream 10, Fedora 43)
     - [x] Runs build_rpm_packages.sh (or skips with --skip-build flag)
     - [x] Verifies all 6 RPM packages are created
     - [x] Verifies SELinux policy modules included in packages (3 policies in 3 packages)
@@ -636,7 +636,7 @@
 - [ ] 12. Implement CI/CD infrastructure
   - [ ] 12.1 Create .github/workflows/rhel-build.yml
     - Add workflow trigger on pull_request and push to main
-    - Configure matrix for distributions (rhel:10, fedora:latest)
+    - Configure matrix for distributions (rhel:10, centos:stream10, fedora:43)
     - Configure matrix for architectures (x86_64, aarch64)
     - Add checkout step
     - Add step to run build_rpm_packages.sh
@@ -877,7 +877,7 @@
   
   - [ ] 24.2 Create RELEASE_NOTES.md for RHEL support
     - Document new RHEL 10 support
-    - List supported distributions (RHEL 10, Fedora latest)
+    - List supported distributions (RHEL 10, CentOS Stream 10, Fedora 43)
     - List supported architectures (x86_64, aarch64)
     - Note any limitations or known issues
     - Provide installation instructions

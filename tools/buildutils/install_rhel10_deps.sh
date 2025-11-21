@@ -3,8 +3,8 @@
 # Install RHEL 10 build dependencies for Cuttlefish RPM packages
 #
 # This script:
-# - Detects RHEL version or Fedora
-# - Enables required repositories (EPEL, CRB/PowerTools)
+# - Detects RHEL 10, CentOS Stream 10, or Fedora 43
+# - Enables required repositories (EPEL, CRB for RHEL/CentOS Stream)
 # - Installs Bazel (Bazelisk preferred, fallback to Copr)
 # - Installs RPM build tools and SELinux policy development tools
 # - Installs all build dependencies from spec files
@@ -48,27 +48,41 @@ function detect_os() {
 
     echo_info "Detected OS: ${OS_NAME} (ID: ${OS_ID}, Version: ${OS_VERSION_ID})"
 
-    # Verify RHEL 10 or Fedora
+    # Verify RHEL 10, CentOS Stream 10, or Fedora 43
     case "${OS_ID}" in
         rhel)
-            if [ "${OS_VERSION_ID}" != "10" ] && [ "${OS_VERSION_ID}" != "8" ] && [ "${OS_VERSION_ID}" != "9" ]; then
+            if [ "${OS_VERSION_ID}" != "10" ] && [ "${OS_VERSION_ID}" != "9" ]; then
                 echo_error "Unsupported RHEL version: ${OS_VERSION_ID}"
-                echo_error "This script supports RHEL 8, 9, and 10"
+                echo_error "This script supports RHEL 9 and 10"
                 exit 1
+            fi
+            if [ "${OS_VERSION_ID}" == "9" ]; then
+                echo_warn "RHEL 9 support is deprecated, recommend RHEL 10"
             fi
             echo_info "OS verification passed: ${OS_ID} ${OS_VERSION_ID} is supported"
             ;;
+        centos)
+            # CentOS Stream 10
+            if [ "${OS_VERSION_ID}" != "10" ]; then
+                echo_error "Unsupported CentOS Stream version: ${OS_VERSION_ID}"
+                echo_error "This script supports CentOS Stream 10 only"
+                exit 1
+            fi
+            echo_info "OS verification passed: CentOS Stream ${OS_VERSION_ID} is supported"
+            ;;
         fedora)
-            # Fedora uses different version numbers (e.g., 39, 40, 41)
-            # We accept any recent Fedora version (38+)
-            if [ "${OS_VERSION_ID}" -lt 38 ]; then
-                echo_warn "Fedora version ${OS_VERSION_ID} is quite old, recommend Fedora 39+"
+            # Fedora 43 specifically
+            if [ "${OS_VERSION_ID}" != "43" ]; then
+                echo_error "Unsupported Fedora version: ${OS_VERSION_ID}"
+                echo_error "This script supports Fedora 43 only"
+                echo_error "You are running Fedora ${OS_VERSION_ID}"
+                exit 1
             fi
             echo_info "OS verification passed: Fedora ${OS_VERSION_ID} is supported"
             ;;
         *)
             echo_error "Unsupported OS: ${OS_ID}"
-            echo_error "This script only supports RHEL and Fedora"
+            echo_error "This script only supports RHEL 10, CentOS Stream 10, and Fedora 43"
             exit 1
             ;;
     esac
@@ -80,14 +94,11 @@ function detect_os() {
 function set_repo_names() {
     echo_info "Setting repository names for ${OS_ID} ${OS_VERSION_ID}..."
 
-    # CRB/PowerTools repository name varies by version (RHEL only)
+    # CRB repository name varies by distribution
     if [ "${OS_ID}" == "rhel" ]; then
         case "${OS_VERSION_ID}" in
             10|9)
                 CRB_REPO="crb"
-                ;;
-            8)
-                CRB_REPO="powertools"
                 ;;
             *)
                 echo_error "Unknown RHEL version for repository naming: ${OS_VERSION_ID}"
@@ -96,9 +107,14 @@ function set_repo_names() {
         esac
         echo_info "Using repository name: ${CRB_REPO}"
         export CRB_REPO
+    elif [ "${OS_ID}" == "centos" ]; then
+        # CentOS Stream 10 uses "crb"
+        CRB_REPO="crb"
+        echo_info "Using repository name: ${CRB_REPO}"
+        export CRB_REPO
     elif [ "${OS_ID}" == "fedora" ]; then
-        # Fedora doesn't use CRB/PowerTools, all packages are in main repos
-        echo_info "Fedora uses default repositories (no CRB/PowerTools needed)"
+        # Fedora doesn't use CRB, all packages are in main repos
+        echo_info "Fedora uses default repositories (no CRB needed)"
         CRB_REPO=""
         export CRB_REPO
     fi
@@ -108,8 +124,8 @@ function set_repo_names() {
 function enable_repositories() {
     echo_info "Enabling required repositories..."
 
-    if [ "${OS_ID}" == "rhel" ]; then
-        # Enable EPEL repository (RHEL only)
+    if [ "${OS_ID}" == "rhel" ] || [ "${OS_ID}" == "centos" ]; then
+        # Enable EPEL repository (RHEL and CentOS Stream)
         if ! rpm -q epel-release &>/dev/null; then
             echo_info "Installing EPEL repository..."
             sudo dnf install -y epel-release
@@ -117,7 +133,7 @@ function enable_repositories() {
             echo_info "EPEL repository already installed"
         fi
 
-        # Enable CRB/PowerTools repository (RHEL only)
+        # Enable CRB repository (RHEL and CentOS Stream)
         echo_info "Enabling ${CRB_REPO} repository..."
         if ! sudo dnf config-manager --set-enabled "${CRB_REPO}" 2>/dev/null; then
             echo_warn "Failed to enable ${CRB_REPO} using config-manager, trying alternative method..."

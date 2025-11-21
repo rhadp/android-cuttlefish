@@ -3,7 +3,7 @@
 # Build Cuttlefish RPM packages for RHEL 10 and compatible distributions
 #
 # This script:
-# - Detects OS type and verifies RHEL 10 or Fedora (latest)
+# - Detects OS type and verifies RHEL 10, CentOS Stream 10, or Fedora 43
 # - Installs build dependencies
 # - Sets up RPM build environment
 # - Extracts version from debian/changelog
@@ -65,26 +65,38 @@ function detect_os() {
 
     echo_info "Detected: ${OS_NAME} (ID: ${OS_ID}, Version: ${OS_VERSION_ID})"
 
-    # Verify RHEL or Fedora
+    # Verify RHEL 10, CentOS Stream 10, or Fedora 43
     case "${OS_ID}" in
         rhel)
-            echo_info "OS verification passed"
-            # Prefer RHEL 10, but support 8 and 9
-            if [ "${OS_VERSION_ID}" != "10" ] && [ "${OS_VERSION_ID}" != "9" ] && [ "${OS_VERSION_ID}" != "8" ]; then
-                echo_warn "This script is designed for RHEL 10, you are running version ${OS_VERSION_ID}"
-                echo_warn "Some features may not work as expected"
+            if [ "${OS_VERSION_ID}" != "10" ] && [ "${OS_VERSION_ID}" != "9" ]; then
+                echo_error "Unsupported RHEL version: ${OS_VERSION_ID}"
+                echo_error "This script supports RHEL 9 and 10"
+                exit 1
             fi
+            if [ "${OS_VERSION_ID}" == "9" ]; then
+                echo_warn "RHEL 9 support is deprecated, recommend RHEL 10"
+            fi
+            echo_info "OS verification passed: RHEL ${OS_VERSION_ID}"
+            ;;
+        centos)
+            if [ "${OS_VERSION_ID}" != "10" ]; then
+                echo_error "Unsupported CentOS Stream version: ${OS_VERSION_ID}"
+                echo_error "This script supports CentOS Stream 10 only"
+                exit 1
+            fi
+            echo_info "OS verification passed: CentOS Stream ${OS_VERSION_ID}"
             ;;
         fedora)
-            echo_info "OS verification passed: Fedora ${OS_VERSION_ID}"
-            # Fedora uses different version numbers (39, 40, 41, etc.)
-            if [ "${OS_VERSION_ID}" -lt 38 ]; then
-                echo_warn "Fedora version ${OS_VERSION_ID} is quite old, recommend Fedora 39+"
+            if [ "${OS_VERSION_ID}" != "43" ]; then
+                echo_error "Unsupported Fedora version: ${OS_VERSION_ID}"
+                echo_error "This script supports Fedora 43 only"
+                exit 1
             fi
+            echo_info "OS verification passed: Fedora ${OS_VERSION_ID}"
             ;;
         *)
             echo_error "Unsupported OS: ${OS_ID}"
-            echo_error "This script only supports RHEL and Fedora"
+            echo_error "This script only supports RHEL 10, CentOS Stream 10, and Fedora 43"
             exit 1
             ;;
     esac

@@ -538,10 +538,10 @@ The spec file %install section needs to handle this, but there's no task for it.
 - "crb" for CodeReady Builder
 - "epel-release" package name
 
-But these vary by RHEL version:
+But these vary by distribution:
 - RHEL 10/9: "crb"
-- RHEL 8: "powertools"
-- Fedora: Uses default repositories (no CRB/PowerTools needed)
+- CentOS Stream 10: "crb"
+- Fedora 43: Uses default repositories (no CRB needed)
 
 **Recommended Fix:** Add OS version detection to Task 8.1:
 ```
