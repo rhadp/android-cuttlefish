@@ -60,9 +60,67 @@ sudo usermod -aG kvm,cvdnetwork,render $USER
 sudo reboot
 ```
 
-The last two commands above add the user to the groups necessary to run the Cuttlefish 
+The last two commands above add the user to the groups necessary to run the Cuttlefish
 Virtual Device and reboot the machine to trigger the installation of additional
 kernel modules and apply udev rules.
+
+## RHEL/RPM Packages
+
+Cuttlefish is now available for Red Hat-based systems including RHEL 10, CentOS Stream 10, and Fedora 43.
+
+### Supported Distributions
+
+* **RHEL 10** - Fully supported
+* **CentOS Stream 10** - Fully supported
+* **Fedora 43** - Fully supported
+* **RHEL 9** - Deprecated, upgrade to RHEL 10 recommended
+
+### RPM Packages
+
+The following RPM packages are provided:
+
+* `cuttlefish-base` - Core Cuttlefish binaries and services
+* `cuttlefish-user` - WebRTC operator service for device interactions
+* `cuttlefish-orchestration` - Host orchestrator for multi-device management
+* `cuttlefish-integration` - System integration utilities
+* `cuttlefish-defaults` - Default configuration files
+* `cuttlefish-common` - Meta-package that installs all required components
+
+### Installation
+
+For complete installation instructions, see [docs/rhel/INSTALL.md](docs/rhel/INSTALL.md).
+
+**Quick start:**
+
+```bash
+# 1. Install meta-package (recommended)
+sudo dnf install cuttlefish-common
+
+# 2. Add user to required groups
+sudo usermod -aG cvdnetwork,kvm $USER
+
+# 3. Start services
+sudo systemctl enable --now cuttlefish-host-resources
+
+# 4. Log out and log back in for group changes to take effect
+```
+
+### Build RPM Packages Manually
+
+The RPM packages can be built from source with the following script:
+
+```bash
+tools/buildutils/build_rpm_packages.sh
+```
+
+For detailed build instructions, see [docs/rhel/DEVELOPMENT.md](docs/rhel/DEVELOPMENT.md).
+
+### Documentation
+
+* [Installation Guide](docs/rhel/INSTALL.md) - Complete installation instructions
+* [Repository Setup](docs/rhel/REPOSITORIES.md) - Repository configuration guide
+* [Development Guide](docs/rhel/DEVELOPMENT.md) - Building packages from source
+* [Troubleshooting](docs/rhel/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Google Compute Engine
 

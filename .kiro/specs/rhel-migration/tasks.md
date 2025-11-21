@@ -584,12 +584,12 @@
   - NOTE: Actual verification requires RHEL 10 system (current development on macOS)
   - _To execute checkpoint: Run ./tools/buildutils/verify_rhel_build.sh on RHEL 10 system_
 
-- [ ] 11. Create comprehensive documentation
-  - [ ] 11.1 Create docs/rhel/ directory
+- [x] 11. Create comprehensive documentation
+  - [x] 11.1 Create docs/rhel/ directory
     - Create docs/rhel/ directory structure
     - _Requirements: 6.1_
-  
-  - [ ] 11.2 Create docs/rhel/INSTALL.md
+
+  - [x] 11.2 Create docs/rhel/INSTALL.md
     - Document RHEL 10 system requirements
     - Provide EPEL and CRB repository setup commands
     - Detail package installation steps (dnf install cuttlefish-common)
@@ -597,15 +597,15 @@
     - Add multi-device configuration instructions (num_cvd_accounts)
     - Include service startup commands (systemctl start cuttlefish-host-resources)
     - _Requirements: 6.1, 6.2_
-  
-  - [ ] 11.3 Create docs/rhel/REPOSITORIES.md
+
+  - [x] 11.3 Create docs/rhel/REPOSITORIES.md
     - Document EPEL repository setup (dnf install epel-release)
     - Document CRB/PowerTools repository activation (dnf config-manager --set-enabled crb)
     - Document vbatts/bazel Copr repository (dnf copr enable vbatts/bazel)
     - Explain repository priorities and conflicts
     - _Requirements: 6.2_
-  
-  - [ ] 11.4 Create docs/rhel/TROUBLESHOOTING.md
+
+  - [x] 11.4 Create docs/rhel/TROUBLESHOOTING.md
     - Document common installation errors (missing repositories, dependency conflicts)
     - Document service startup failures (network bridge issues, permission errors)
     - Document SELinux problems and solutions (AVC denials, audit2allow)
@@ -618,19 +618,19 @@
     - Document insufficient system resources (memory, disk space)
     - Include debugging commands (journalctl, systemctl status, ausearch, etc.)
     - _Requirements: 6.4, 12.10_
-  
-  - [ ] 11.5 Create docs/rhel/DEVELOPMENT.md
+
+  - [x] 11.5 Create docs/rhel/DEVELOPMENT.md
     - Document build environment setup (install_rhel10_deps.sh)
     - Provide instructions for building packages (build_rpm_packages.sh)
     - Explain testing changes locally (rpmbuild, mock)
     - Document contribution process for RHEL-specific patches
     - Include debugging guide for RPM build issues
     - _Requirements: 6.5_
-  
-  - [ ] 11.6 Update main README.md
+
+  - [x] 11.6 Update main README.md
     - Add RHEL support announcement
     - Link to docs/rhel/INSTALL.md
-    - Update supported platforms list to include RHEL 10
+    - Update supported platforms list to include RHEL 10, CentOS Stream 10, and Fedora 43
     - _Requirements: 6.1_
 
 - [ ] 12. Implement CI/CD infrastructure
