@@ -7,10 +7,9 @@ License:        Apache-2.0
 URL:            https://github.com/google/android-cuttlefish
 Source0:        cuttlefish-base-%{version}.tar.gz
 
-# Build dependencies will be added in Task 2
-BuildRequires:
+# No build dependencies needed for defaults package
 
-# Runtime dependencies will be added in Task 2
+# Runtime dependencies
 Requires:       cuttlefish-base
 
 %description

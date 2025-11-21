@@ -7,11 +7,15 @@ License:        Apache-2.0
 URL:            https://github.com/google/android-cuttlefish
 Source0:        cuttlefish-frontend-%{version}.tar.gz
 
-# Build dependencies will be added in Task 2
-BuildRequires:
+# Build dependencies
+BuildRequires:  golang >= 1.13
+BuildRequires:  protobuf-devel
+BuildRequires:  protobuf-compiler
 
-# Runtime dependencies will be added in Task 2
+# Runtime dependencies
 Requires:       cuttlefish-base
+Requires:       shadow-utils
+Requires:       openssl
 
 %description
 Cuttlefish Android Virtual Device companion package.

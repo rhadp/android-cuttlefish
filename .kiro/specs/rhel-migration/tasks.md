@@ -51,8 +51,8 @@
     - Add basic metadata sections
     - _Requirements: 4.1_
 
-- [ ] 2. Implement dependency mapping for all packages
-  - [ ] 2.1 Map cuttlefish-base dependencies
+- [x] 2. Implement dependency mapping for all packages
+  - [x] 2.1 Map cuttlefish-base dependencies
     - Analyze base/debian/control for BuildRequires and Requires
     - Map Debian package names to RHEL equivalents (adduser→shadow-utils, iproute2→iproute, etc.)
     - Apply systematic -dev → -devel suffix mapping (libfmt-dev→fmt-devel, libgflags-dev→gflags-devel, etc.)
@@ -60,43 +60,43 @@
     - Add ebtables-legacy for broute operations
     - Add BuildRequires and Requires sections to cuttlefish-base.spec
     - _Requirements: 4.2, 6.3_
-  
-  - [ ] 2.2 Map cuttlefish-integration dependencies
+
+  - [x] 2.2 Map cuttlefish-integration dependencies
     - Map qemu packages and other dependencies
     - Add to cuttlefish-integration.spec
     - _Requirements: 4.2_
-  
-  - [ ] 2.3 Map cuttlefish-user dependencies
+
+  - [x] 2.3 Map cuttlefish-user dependencies
     - Analyze frontend/debian/control for cuttlefish-user
     - Map dependencies to RHEL equivalents
     - Add to cuttlefish-user.spec
     - _Requirements: 4.2_
-  
-  - [ ] 2.4 Map cuttlefish-orchestration dependencies
+
+  - [x] 2.4 Map cuttlefish-orchestration dependencies
     - Map nginx, systemd-journal-remote, and other dependencies
     - Add to cuttlefish-orchestration.spec
     - _Requirements: 4.2_
-  
-  - [ ] 2.5 Create dependency mapping documentation
+
+  - [x] 2.5 Create dependency mapping documentation
     - Create docs/rhel/DEPENDENCIES.md
     - Document all Debian → RHEL package mappings in table format
     - Include architecture-specific mappings
     - Note optional vs required dependencies
     - Document systematic -dev → -devel suffix pattern
     - _Requirements: 6.3_
-  
-  - [ ] 2.6 Verify dependency mapping completeness
-    - [ ] 2.6.1 Create script to extract all Debian dependencies
+
+  - [x] 2.6 Verify dependency mapping completeness
+    - [x] 2.6.1 Create script to extract all Debian dependencies
       - Parse base/debian/control and frontend/debian/control
       - Extract all BuildRequires and Requires
       - Output list of Debian packages
-    - [ ] 2.6.2 Cross-reference with RHEL dependency mappings
+    - [x] 2.6.2 Cross-reference with RHEL dependency mappings
       - Compare extracted Debian packages with DEPENDENCIES.md
       - Identify any unmapped dependencies
-    - [ ] 2.6.3 Verify all packages exist in RHEL/EPEL/CRB repos
+    - [x] 2.6.3 Verify all packages exist in RHEL/EPEL/CRB repos
       - Test `dnf info` for each RHEL package
       - Report packages not found in repositories
-    - [ ] 2.6.4 Report any unmapped dependencies
+    - [x] 2.6.4 Report any unmapped dependencies
       - Generate report of missing mappings
       - Exit with error if unmapped dependencies found
       - _Requirements: 4.2, 6.3_

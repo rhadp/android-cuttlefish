@@ -7,11 +7,13 @@ License:        Apache-2.0
 URL:            https://github.com/google/android-cuttlefish
 Source0:        cuttlefish-base-%{version}.tar.gz
 
-# Build dependencies will be added in Task 2
-BuildRequires:
+# No build dependencies needed for integration package
 
-# Runtime dependencies will be added in Task 2
+# Runtime dependencies
 Requires:       cuttlefish-base
+Requires:       qemu-system-arm >= 2.8.0
+Requires:       qemu-system-x86 >= 2.8.0
+Requires:       qemu-system-misc >= 2.8.0
 
 %description
 Configuration and utilities for Android cuttlefish devices running on
