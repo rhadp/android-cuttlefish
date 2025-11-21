@@ -34,9 +34,9 @@ BUILD_RPM="${SCRIPT_DIR}/build_rpm_packages.sh"
 OS_TYPE=$(detect_os)
 
 case "${OS_TYPE}" in
-  rhel|rocky|almalinux|centos|fedora)
-    # RHEL-based system detected - use RPM build
-    echo "Detected RHEL-based system: ${OS_TYPE}"
+  rhel|fedora)
+    # RHEL/Fedora system detected - use RPM build
+    echo "Detected RPM-based system: ${OS_TYPE}"
     echo "Using RPM build process..."
     exec "${BUILD_RPM}" "$@"
     ;;
@@ -54,7 +54,7 @@ case "${OS_TYPE}" in
     echo "ERROR: Unsupported operating system: ${OS_TYPE}" >&2
     echo "This script supports:" >&2
     echo "  - Debian-based: debian, ubuntu" >&2
-    echo "  - RHEL-based: rhel, rocky, almalinux, centos, fedora" >&2
+    echo "  - RPM-based: rhel, fedora" >&2
     exit 1
     ;;
 esac

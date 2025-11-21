@@ -912,7 +912,7 @@ Plan for these follow-up tasks after initial release:
 4. **Community Feedback**
    - Monitor repository for RHEL-specific issues
    - Collect feedback on documentation clarity
-   - Address any RHEL derivative (Rocky, Alma) specific issues
+   - Address any distribution-specific issues (RHEL, Fedora)
 
 ---
 

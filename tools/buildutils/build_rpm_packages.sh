@@ -3,7 +3,7 @@
 # Build Cuttlefish RPM packages for RHEL 10 and compatible distributions
 #
 # This script:
-# - Detects OS type and verifies RHEL/Rocky/AlmaLinux 10
+# - Detects OS type and verifies RHEL 10 or Fedora (latest)
 # - Installs build dependencies
 # - Sets up RPM build environment
 # - Extracts version from debian/changelog
@@ -65,23 +65,29 @@ function detect_os() {
 
     echo_info "Detected: ${OS_NAME} (ID: ${OS_ID}, Version: ${OS_VERSION_ID})"
 
-    # Verify RHEL or compatible
+    # Verify RHEL or Fedora
     case "${OS_ID}" in
-        rhel|rocky|almalinux)
+        rhel)
             echo_info "OS verification passed"
+            # Prefer RHEL 10, but support 8 and 9
+            if [ "${OS_VERSION_ID}" != "10" ] && [ "${OS_VERSION_ID}" != "9" ] && [ "${OS_VERSION_ID}" != "8" ]; then
+                echo_warn "This script is designed for RHEL 10, you are running version ${OS_VERSION_ID}"
+                echo_warn "Some features may not work as expected"
+            fi
+            ;;
+        fedora)
+            echo_info "OS verification passed: Fedora ${OS_VERSION_ID}"
+            # Fedora uses different version numbers (39, 40, 41, etc.)
+            if [ "${OS_VERSION_ID}" -lt 38 ]; then
+                echo_warn "Fedora version ${OS_VERSION_ID} is quite old, recommend Fedora 39+"
+            fi
             ;;
         *)
             echo_error "Unsupported OS: ${OS_ID}"
-            echo_error "This script only supports RHEL, Rocky Linux, and AlmaLinux"
+            echo_error "This script only supports RHEL and Fedora"
             exit 1
             ;;
     esac
-
-    # Prefer RHEL 10, but support 8 and 9
-    if [ "${OS_VERSION_ID}" != "10" ] && [ "${OS_VERSION_ID}" != "9" ] && [ "${OS_VERSION_ID}" != "8" ]; then
-        echo_warn "This script is designed for RHEL 10, you are running version ${OS_VERSION_ID}"
-        echo_warn "Some features may not work as expected"
-    fi
 }
 
 # Install build dependencies

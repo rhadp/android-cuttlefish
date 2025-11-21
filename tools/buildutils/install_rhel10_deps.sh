@@ -3,7 +3,7 @@
 # Install RHEL 10 build dependencies for Cuttlefish RPM packages
 #
 # This script:
-# - Detects RHEL version and derivatives (Rocky Linux, AlmaLinux)
+# - Detects RHEL version or Fedora
 # - Enables required repositories (EPEL, CRB/PowerTools)
 # - Installs Bazel (Bazelisk preferred, fallback to Copr)
 # - Installs RPM build tools and SELinux policy development tools
@@ -48,19 +48,27 @@ function detect_os() {
 
     echo_info "Detected OS: ${OS_NAME} (ID: ${OS_ID}, Version: ${OS_VERSION_ID})"
 
-    # Verify RHEL 10 or compatible
+    # Verify RHEL 10 or Fedora
     case "${OS_ID}" in
-        rhel|rocky|almalinux)
+        rhel)
             if [ "${OS_VERSION_ID}" != "10" ] && [ "${OS_VERSION_ID}" != "8" ] && [ "${OS_VERSION_ID}" != "9" ]; then
-                echo_error "Unsupported OS version: ${OS_VERSION_ID}"
-                echo_error "This script supports RHEL/Rocky/AlmaLinux 8, 9, and 10"
+                echo_error "Unsupported RHEL version: ${OS_VERSION_ID}"
+                echo_error "This script supports RHEL 8, 9, and 10"
                 exit 1
             fi
             echo_info "OS verification passed: ${OS_ID} ${OS_VERSION_ID} is supported"
             ;;
+        fedora)
+            # Fedora uses different version numbers (e.g., 39, 40, 41)
+            # We accept any recent Fedora version (38+)
+            if [ "${OS_VERSION_ID}" -lt 38 ]; then
+                echo_warn "Fedora version ${OS_VERSION_ID} is quite old, recommend Fedora 39+"
+            fi
+            echo_info "OS verification passed: Fedora ${OS_VERSION_ID} is supported"
+            ;;
         *)
             echo_error "Unsupported OS: ${OS_ID}"
-            echo_error "This script only supports RHEL, Rocky Linux, and AlmaLinux"
+            echo_error "This script only supports RHEL and Fedora"
             exit 1
             ;;
     esac
@@ -72,43 +80,54 @@ function detect_os() {
 function set_repo_names() {
     echo_info "Setting repository names for ${OS_ID} ${OS_VERSION_ID}..."
 
-    # CRB/PowerTools repository name varies by version
-    case "${OS_VERSION_ID}" in
-        10|9)
-            CRB_REPO="crb"
-            ;;
-        8)
-            CRB_REPO="powertools"
-            ;;
-        *)
-            echo_error "Unknown version for repository naming: ${OS_VERSION_ID}"
-            exit 1
-            ;;
-    esac
-
-    echo_info "Using repository name: ${CRB_REPO}"
-    export CRB_REPO
+    # CRB/PowerTools repository name varies by version (RHEL only)
+    if [ "${OS_ID}" == "rhel" ]; then
+        case "${OS_VERSION_ID}" in
+            10|9)
+                CRB_REPO="crb"
+                ;;
+            8)
+                CRB_REPO="powertools"
+                ;;
+            *)
+                echo_error "Unknown RHEL version for repository naming: ${OS_VERSION_ID}"
+                exit 1
+                ;;
+        esac
+        echo_info "Using repository name: ${CRB_REPO}"
+        export CRB_REPO
+    elif [ "${OS_ID}" == "fedora" ]; then
+        # Fedora doesn't use CRB/PowerTools, all packages are in main repos
+        echo_info "Fedora uses default repositories (no CRB/PowerTools needed)"
+        CRB_REPO=""
+        export CRB_REPO
+    fi
 }
 
 # Task 9.1.3: Enable required repositories
 function enable_repositories() {
     echo_info "Enabling required repositories..."
 
-    # Enable EPEL repository
-    if ! rpm -q epel-release &>/dev/null; then
-        echo_info "Installing EPEL repository..."
-        sudo dnf install -y epel-release
-    else
-        echo_info "EPEL repository already installed"
-    fi
+    if [ "${OS_ID}" == "rhel" ]; then
+        # Enable EPEL repository (RHEL only)
+        if ! rpm -q epel-release &>/dev/null; then
+            echo_info "Installing EPEL repository..."
+            sudo dnf install -y epel-release
+        else
+            echo_info "EPEL repository already installed"
+        fi
 
-    # Enable CRB/PowerTools repository
-    echo_info "Enabling ${CRB_REPO} repository..."
-    if ! sudo dnf config-manager --set-enabled "${CRB_REPO}" 2>/dev/null; then
-        echo_warn "Failed to enable ${CRB_REPO} using config-manager, trying alternative method..."
-        # For some systems, might need to use dnf config-manager differently
-        sudo dnf config-manager --enable "${CRB_REPO}" 2>/dev/null || \
-            echo_warn "Could not enable ${CRB_REPO}. Some dependencies might be missing."
+        # Enable CRB/PowerTools repository (RHEL only)
+        echo_info "Enabling ${CRB_REPO} repository..."
+        if ! sudo dnf config-manager --set-enabled "${CRB_REPO}" 2>/dev/null; then
+            echo_warn "Failed to enable ${CRB_REPO} using config-manager, trying alternative method..."
+            # For some systems, might need to use dnf config-manager differently
+            sudo dnf config-manager --enable "${CRB_REPO}" 2>/dev/null || \
+                echo_warn "Could not enable ${CRB_REPO}. Some dependencies might be missing."
+        fi
+    elif [ "${OS_ID}" == "fedora" ]; then
+        # Fedora has all packages in default repositories
+        echo_info "Fedora default repositories already enabled"
     fi
 
     # Enable vbatts/bazel Copr repository (backup method for Bazel)

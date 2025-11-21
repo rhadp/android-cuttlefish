@@ -4,7 +4,7 @@
 
 This design document specifies the architecture and implementation approach for adding RHEL/RPM support to the Android Cuttlefish project. The design follows an additive approach, maintaining full backward compatibility with existing Debian/Ubuntu support while introducing parallel RHEL infrastructure.
 
-The migration involves creating RPM spec files, converting LSB init scripts to systemd units, mapping package dependencies, and establishing build and test infrastructure for RHEL 10 (including derivatives like Rocky Linux and AlmaLinux).
+The migration involves creating RPM spec files, converting LSB init scripts to systemd units, mapping package dependencies, and establishing build and test infrastructure for RHEL 10 and Fedora (latest).
 
 ## Architecture
 
@@ -1591,10 +1591,9 @@ Each correctness property will be implemented as a property-based test tagged wi
 
 ### System Testing
 
-**RHEL 10 Testing:**
+**RPM Distribution Testing:**
 - Test on RHEL 10
-- Test on Rocky Linux 10
-- Test on AlmaLinux 10
+- Test on Fedora (latest)
 
 **Architecture Testing:**
 - Test on x86_64
@@ -1692,7 +1691,7 @@ The CI/CD system will support parallel Debian and RHEL builds with comprehensive
    - Check for unintended Debian changes
 
 **Matrix Testing:**
-- **Distributions:** RHEL 10, Rocky Linux 10, AlmaLinux 10
+- **Distributions:** RHEL 10, Fedora (latest)
 - **Architectures:** x86_64, aarch64
 - **Scenarios:** Clean install, upgrade, multi-device
 

@@ -1,6 +1,6 @@
 # Cuttlefish RHEL Troubleshooting Guide
 
-This document provides solutions to common problems when running Cuttlefish on RHEL 10 and compatible distributions (Rocky Linux 10, AlmaLinux 10).
+This document provides solutions to common problems when running Cuttlefish on RHEL 10 and Fedora (latest).
 
 ## Table of Contents
 

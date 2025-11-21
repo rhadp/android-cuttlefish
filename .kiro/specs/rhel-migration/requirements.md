@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This document specifies the requirements for adding RHEL/RPM support to the Android Cuttlefish project. The project currently supports only Debian/Ubuntu systems through .deb packages. This migration will add parallel support for RHEL 10 and its derivatives (Rocky Linux, AlmaLinux) through .rpm packages, while maintaining existing Debian support.
+This document specifies the requirements for adding RHEL/RPM support to the Android Cuttlefish project. The project currently supports only Debian/Ubuntu systems through .deb packages. This migration will add parallel support for RHEL 10 and Fedora (latest) through .rpm packages, while maintaining existing Debian support.
 
 ## Glossary
 

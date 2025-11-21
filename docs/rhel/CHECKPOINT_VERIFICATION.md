@@ -5,7 +5,7 @@ This document describes how to verify the RHEL package build process (Task 10 ch
 ## Prerequisites
 
 ### System Requirements
-- RHEL 10, Rocky Linux 10, or AlmaLinux 10 (RHEL 8/9 supported in compatibility mode)
+- RHEL 10 or Fedora (latest) - (RHEL 8/9 supported in compatibility mode)
 - Minimum 8GB RAM
 - Minimum 20GB free disk space
 - Internet connection for repository access
@@ -55,7 +55,7 @@ If you prefer to verify manually, follow these steps:
 cat /etc/os-release
 ```
 
-Expected: `ID=rhel` (or `rocky`, `almalinux`) and `VERSION_ID=10.x`
+Expected: `ID=rhel` (or `fedora`) and appropriate `VERSION_ID` (10.x for RHEL, 39+ for Fedora)
 
 #### Step 2: Run Build
 ```bash
@@ -120,7 +120,7 @@ Expected: No errors, warnings should be filtered by `.rpmlintrc`
 Use this checklist to track verification progress:
 
 ### Build Environment
-- [ ] Running on RHEL 10 / Rocky Linux 10 / AlmaLinux 10
+- [ ] Running on RHEL 10 or Fedora (latest)
 - [ ] Minimum 8GB RAM available
 - [ ] Minimum 20GB disk space available
 - [ ] Internet connection active

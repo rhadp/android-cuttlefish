@@ -48,16 +48,16 @@ echo ""
 # Check if running on RHEL-compatible system
 if [ -f /etc/os-release ]; then
     source /etc/os-release
-    if [[ "$ID" =~ ^(rhel|centos|rocky|almalinux|fedora)$ ]]; then
-        echo -e "${GREEN}✓${NC} Running on RHEL-compatible system: $PRETTY_NAME"
+    if [[ "$ID" =~ ^(rhel|fedora)$ ]]; then
+        echo -e "${GREEN}✓${NC} Running on RPM-based system: $PRETTY_NAME"
         can_test_dnf=true
     else
-        echo -e "${YELLOW}⚠${NC} Not running on RHEL-compatible system: $PRETTY_NAME"
+        echo -e "${YELLOW}⚠${NC} Not running on RPM-based system: $PRETTY_NAME"
         echo "  Package availability checks will be skipped"
         can_test_dnf=false
     fi
 else
-    echo -e "${YELLOW}⚠${NC} Cannot detect OS, assuming non-RHEL system"
+    echo -e "${YELLOW}⚠${NC} Cannot detect OS, assuming non-RPM system"
     echo "  Package availability checks will be skipped"
     can_test_dnf=false
 fi
