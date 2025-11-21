@@ -324,12 +324,12 @@
     - Add initial entry with current date and version
     - _Requirements: 4.1_
 
-- [ ] 5. Complete cuttlefish-user RPM spec file
-  - [ ] 5.1 Add %description section
+- [x] 5. Complete cuttlefish-user RPM spec file
+  - [x] 5.1 Add %description section
     - Copy description from frontend/debian/control
     - _Requirements: 4.1_
-  
-  - [ ] 5.2 Add %prep and %build sections
+
+  - [x] 5.2 Add %prep and %build sections
     - Add %setup -q -n cuttlefish-frontend-%{version}
     - Build Go binaries with RHEL-compliant flags:
       - -buildmode=pie
@@ -338,8 +338,8 @@
     - Set CGO_ENABLED=1
     - Reference frontend/debian/rules for build commands
     - _Requirements: 2.7, 4.1_
-  
-  - [ ] 5.3 Add %install section
+
+  - [x] 5.3 Add %install section
     - Install operator binary to %{buildroot}/usr/lib/cuttlefish-common/bin/
     - Install systemd unit file to %{buildroot}%{_unitdir}/
     - Install config file to %{buildroot}/etc/sysconfig/
@@ -347,23 +347,23 @@
     - Create /usr/share/cuttlefish-common/operator directory for assets
     - Reference frontend/debian/cuttlefish-user.install
     - _Requirements: 4.1, 4.3_
-  
-  - [ ] 5.4 Add %files section
+
+  - [x] 5.4 Add %files section
     - List all installed files with appropriate macros
     - Use %config(noreplace) for config files
     - _Requirements: 4.1, 4.3_
-  
-  - [ ] 5.5 Add %pre section for user creation
+
+  - [x] 5.5 Add %pre section for user creation
     - Check if _cutf-operator user exists using getent
     - Create _cutf-operator user with useradd -r -s /sbin/nologin
     - Add user to cvdnetwork group
     - _Requirements: 8.2, 8.4_
-  
-  - [ ] 5.6 Add %post, %preun, %postun sections
+
+  - [x] 5.6 Add %post, %preun, %postun sections
     - Use systemd macros for cuttlefish-operator.service
     - _Requirements: 4.5_
-  
-  - [ ] 5.7 Add %changelog section
+
+  - [x] 5.7 Add %changelog section
     - Add initial entry
     - _Requirements: 4.1_
 
