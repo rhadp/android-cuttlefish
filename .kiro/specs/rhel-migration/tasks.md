@@ -409,8 +409,8 @@
     - Add initial entry
     - _Requirements: 4.1_
 
-- [ ] 7. Complete remaining RPM spec files
-  - [ ] 7.1 Complete cuttlefish-integration.spec
+- [x] 7. Complete remaining RPM spec files
+  - [x] 7.1 Complete cuttlefish-integration.spec
     - Add %description, %prep, %build sections
     - Add %install section for udev rules and kernel module configs
     - Install udev rules to /usr/lib/udev/rules.d/
@@ -418,15 +418,15 @@
     - Add %files section
     - Reference base/debian/cuttlefish-integration.install
     - _Requirements: 4.1, 4.2, 5.3, 5.4_
-  
-  - [ ] 7.2 Complete cuttlefish-common.spec (meta-package)
+
+  - [x] 7.2 Complete cuttlefish-common.spec (meta-package)
     - Add %description
     - Add Requires: cuttlefish-base, cuttlefish-user
     - No %build, %install, or %files sections (meta-package)
     - Add %changelog
     - _Requirements: 4.1, 4.2_
-  
-  - [ ] 7.3 Complete cuttlefish-defaults.spec
+
+  - [x] 7.3 Complete cuttlefish-defaults.spec
     - Add %description, %prep, %build sections
     - Add %install section for configuration files
     - Use %config(noreplace) in %files section

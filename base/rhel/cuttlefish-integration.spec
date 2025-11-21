@@ -20,19 +20,45 @@ Configuration and utilities for Android cuttlefish devices running on
 Google Compute Engine. Not intended for use on developer machines.
 
 %prep
-# Source extraction and preparation
-# Will be implemented in Task 7
+%setup -q -n cuttlefish-base-%{version}
 
 %build
 # No build step required for integration package
 
 %install
-# Install files to buildroot
-# Will be implemented in Task 7
+# Create directory structure (Task 7.1)
+mkdir -p %{buildroot}/usr/lib/udev/rules.d
+mkdir -p %{buildroot}/etc/modprobe.d
+mkdir -p %{buildroot}/etc/default
+mkdir -p %{buildroot}/etc/rsyslog.d
+mkdir -p %{buildroot}/etc/ssh
+
+# Install udev rules (based on base/debian/cuttlefish-integration.udev)
+install -m 644 debian/cuttlefish-integration.udev \
+    %{buildroot}/usr/lib/udev/rules.d/99-cuttlefish-integration.rules
+
+# Install files from host/packages/cuttlefish-integration
+# (based on base/debian/cuttlefish-integration.install)
+install -m 644 host/packages/cuttlefish-integration/etc/modprobe.d/cuttlefish-integration.conf \
+    %{buildroot}/etc/modprobe.d/cuttlefish-integration.conf
+install -m 644 host/packages/cuttlefish-integration/etc/default/instance_configs.cfg.template \
+    %{buildroot}/etc/default/instance_configs.cfg.template
+install -m 644 host/packages/cuttlefish-integration/etc/rsyslog.d/91-cuttlefish.conf \
+    %{buildroot}/etc/rsyslog.d/91-cuttlefish.conf
+install -m 644 host/packages/cuttlefish-integration/etc/ssh/sshd_config.cuttlefish \
+    %{buildroot}/etc/ssh/sshd_config.cuttlefish
 
 %files
-# List of files included in package
-# Will be implemented in Task 7
+# Udev rules
+/usr/lib/udev/rules.d/99-cuttlefish-integration.rules
+
+# Kernel module configuration
+%config(noreplace) /etc/modprobe.d/cuttlefish-integration.conf
+
+# GCE integration configuration files
+%config(noreplace) /etc/default/instance_configs.cfg.template
+%config(noreplace) /etc/rsyslog.d/91-cuttlefish.conf
+%config(noreplace) /etc/ssh/sshd_config.cuttlefish
 
 %changelog
 * Thu Nov 21 2024 Cuttlefish Team <cloud-android-ext@google.com> - 1.34.0-1

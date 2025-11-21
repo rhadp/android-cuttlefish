@@ -17,19 +17,22 @@ May potentially enable new or experimental cuttlefish features
 before being enabled by default.
 
 %prep
-# Source extraction and preparation
-# Will be implemented in Task 7
+%setup -q -n cuttlefish-base-%{version}
 
 %build
 # No build step required for defaults package
 
 %install
-# Install files to buildroot
-# Will be implemented in Task 7
+# Create directory structure (Task 7.3)
+mkdir -p %{buildroot}/usr/lib/cuttlefish-common/etc
+
+# Install configuration file (based on base/debian/cuttlefish-defaults.install)
+install -m 644 debian/cf_defaults \
+    %{buildroot}/usr/lib/cuttlefish-common/etc/cf_defaults
 
 %files
-# List of files included in package
-# Will be implemented in Task 7
+# Configuration file for experimental features
+%config(noreplace) /usr/lib/cuttlefish-common/etc/cf_defaults
 
 %changelog
 * Thu Nov 21 2024 Cuttlefish Team <cloud-android-ext@google.com> - 1.34.0-1
