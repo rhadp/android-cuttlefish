@@ -2,6 +2,9 @@ Cuttlefish is an Android Virtual Device (AVD) platform that provides a configura
 
   Repository Structure
 
+  Specifications:
+  - all specs are in .kiro/specs/**
+  
   Core Components:
   - base/cvd/cuttlefish/host/commands/ - Main executable commands
   - base/cvd/cuttlefish/host/frontend/ - User interface components

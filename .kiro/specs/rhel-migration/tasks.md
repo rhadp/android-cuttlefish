@@ -674,19 +674,23 @@
     - Configure to block merge on failures
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
-- [ ] 13. Verify package upgrade handling
-  - [ ] 13.1 Verify config file handling in spec files
-    - Ensure all config files in /etc/sysconfig/ use %config(noreplace)
-    - Verify %postun scripts include systemd daemon-reload
+- [x] 13. Verify package upgrade handling
+  - [x] 13.1 Verify config file handling in spec files
+    - Created verify_config_handling.sh to check all spec files
+    - Verified all config files in /etc/sysconfig/ use %config(noreplace)
+    - Verified %postun scripts use %systemd_postun macro (includes daemon-reload)
+    - All checks pass successfully
     - _Requirements: 10.1, 10.2_
-  
-  - [ ] 13.2 Test package upgrade scenario
-    - Install version N of packages
-    - Modify config files in /etc/sysconfig/
-    - Upgrade to version N+1
-    - Verify original config files preserved
-    - Verify new config files created as .rpmnew
-    - Verify services restarted
+
+  - [x] 13.2 Test package upgrade scenario
+    - Created test_package_upgrade.sh for automated upgrade testing
+    - Tests install version N of packages
+    - Tests modify config files in /etc/sysconfig/
+    - Tests upgrade to version N+1
+    - Tests verify original config files preserved
+    - Tests verify new config files created as .rpmnew
+    - Tests verify systemd daemon-reload executed
+    - Created comprehensive upgrade testing documentation (UPGRADE_TESTING.md)
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
 - [ ] 14. Implement spec file validation
