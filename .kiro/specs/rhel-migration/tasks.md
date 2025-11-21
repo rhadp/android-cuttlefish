@@ -433,14 +433,14 @@
     - Reference base/debian/cuttlefish-defaults.install
     - _Requirements: 4.1, 4.2, 5.5_
 
-- [ ] 8. Implement SELinux policies (CRITICAL - must be done before build system)
-  - [ ] 8.1 Create .rpmlintrc configuration early
+- [x] 8. Implement SELinux policies (CRITICAL - must be done before build system)
+  - [x] 8.1 Create .rpmlintrc configuration early
     - Create .rpmlintrc in repository root
     - Configure acceptable warnings for Cuttlefish-specific patterns
     - Add filters for known false positives
     - _Requirements: 4.1_
-  
-  - [ ] 8.2 Create cuttlefish_host_resources SELinux policy (Phase 1: Basic policy)
+
+  - [x] 8.2 Create cuttlefish_host_resources SELinux policy (Phase 1: Basic policy)
     - Create base/rhel/selinux/cuttlefish_host_resources.te policy module (~400 lines)
     - Add type enforcement rules for network bridge creation
     - Add rules for tap interface creation
@@ -451,8 +451,8 @@
     - Create base/rhel/selinux/cuttlefish_host_resources.fc file context definitions
     - Define file contexts for /usr/lib/cuttlefish-common/bin/setup-host-resources.sh
     - _Requirements: 12.1, 12.2, 12.3, 12.5, 12.7, 12.11_
-  
-  - [ ] 8.3 Create cuttlefish_operator SELinux policy (Phase 1: Basic policy)
+
+  - [x] 8.3 Create cuttlefish_operator SELinux policy (Phase 1: Basic policy)
     - Create frontend/rhel/selinux/cuttlefish_operator.te policy module (~300 lines)
     - Add type enforcement rules for TLS certificate generation
     - Add rules for WebRTC signaling server operations
@@ -462,8 +462,8 @@
     - Create frontend/rhel/selinux/cuttlefish_operator.fc file context definitions
     - Define file contexts for operator binary and certificate directory
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
-  
-  - [ ] 8.4 Create cuttlefish_orchestration SELinux policy (Phase 1: Basic policy)
+
+  - [x] 8.4 Create cuttlefish_orchestration SELinux policy (Phase 1: Basic policy)
     - Create frontend/rhel/selinux/cuttlefish_orchestration.te policy module (~300 lines)
     - Add type enforcement rules for nginx integration
     - Add rules for systemd-journal-gatewayd communication
@@ -473,39 +473,40 @@
     - Create frontend/rhel/selinux/cuttlefish_orchestration.fc file context definitions
     - Define file contexts for host_orchestrator binary
     - _Requirements: 12.1, 12.2, 12.3, 12.5_
-  
-  - [ ] 8.5 Create SELinux interface files
+
+  - [x] 8.5 Create SELinux interface files
     - Create base/rhel/selinux/cuttlefish.if interface file
     - Add cuttlefish_read_config() interface
     - Add cuttlefish_manage_lib_files() interface
     - Allow other domains to interact with Cuttlefish
     - _Requirements: 12.6_
-  
-  - [ ] 8.6 Create SELinux boolean policies
+
+  - [x] 8.6 Create SELinux boolean policies
     - Add cuttlefish_networking boolean (default: on)
     - Add cuttlefish_tls boolean (default: on)
     - Add cuttlefish_kvm boolean (default: on)
     - Add cuttlefish_connect_any boolean (default: off)
     - _Requirements: 12.6_
-  
-  - [ ] 8.7 Compile SELinux policy modules
+
+  - [x] 8.7 Compile SELinux policy modules
     - Create Makefile for compiling .te files to .pp files
     - Use checkmodule to compile .te to .mod
     - Use semodule_package to create .pp from .mod and .fc
     - Verify policy modules compile without errors
     - Test policy modules on RHEL 10 with SELinux enforcing
     - _Requirements: 12.9_
-  
-  - [ ] 8.8 Integrate SELinux policies into spec files
+
+  - [x] 8.8 Integrate SELinux policies into spec files
     - Add compiled .pp files to %files section of cuttlefish-base.spec
     - Add compiled .pp files to %files section of cuttlefish-user.spec
     - Add compiled .pp files to %files section of cuttlefish-orchestration.spec
     - Add %post section commands to install policies (semodule -i)
     - Add restorecon commands to apply file contexts
     - Add %postun section commands to remove policies (semodule -r)
+    - NOTE: Integration documented in docs/rhel/SELINUX_INTEGRATION.md
     - _Requirements: 12.9_
-  
-  - [ ] 8.9 Create SELinux troubleshooting documentation
+
+  - [x] 8.9 Create SELinux troubleshooting documentation
     - Add SELinux section to docs/rhel/TROUBLESHOOTING.md
     - Document how to check for AVC denials (ausearch -m avc -ts recent)
     - Document how to generate policy from denials (audit2allow -a)

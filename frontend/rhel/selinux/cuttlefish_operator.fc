@@ -1,0 +1,18 @@
+# Cuttlefish Operator File Contexts
+#
+# This file defines the SELinux file contexts for the cuttlefish-operator service
+
+# Operator binary
+/usr/lib/cuttlefish-common/bin/operator  --  gen_context(system_u:object_r:cuttlefish_operator_exec_t,s0)
+
+# Certificate generation script
+/usr/lib/cuttlefish-common/bin/generate-operator-certs\.sh  --  gen_context(system_u:object_r:cuttlefish_operator_exec_t,s0)
+
+# TLS certificates directory
+/etc/cuttlefish-common/operator/cert(/.*)?  gen_context(system_u:object_r:cuttlefish_operator_cert_t,s0)
+
+# Runtime files
+/run/cuttlefish(/.*)?  gen_context(system_u:object_r:cuttlefish_operator_var_run_t,s0)
+
+# Web UI assets
+/usr/share/cuttlefish-common/operator(/.*)?  gen_context(system_u:object_r:httpd_sys_content_t,s0)

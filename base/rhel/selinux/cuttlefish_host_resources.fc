@@ -1,0 +1,12 @@
+# Cuttlefish Host Resources File Contexts
+#
+# This file defines the SELinux file contexts for the cuttlefish-host-resources service
+
+# Main service script
+/usr/lib/cuttlefish-common/bin/setup-host-resources\.sh  --  gen_context(system_u:object_r:cuttlefish_host_resources_exec_t,s0)
+
+# Runtime files
+/var/run/cuttlefish-dnsmasq-.*\.pid  --  gen_context(system_u:object_r:cuttlefish_host_resources_var_run_t,s0)
+/var/run/cuttlefish-dnsmasq-.*\.leases  --  gen_context(system_u:object_r:cuttlefish_host_resources_var_run_t,s0)
+/run/cuttlefish-dnsmasq-.*\.pid  --  gen_context(system_u:object_r:cuttlefish_host_resources_var_run_t,s0)
+/run/cuttlefish-dnsmasq-.*\.leases  --  gen_context(system_u:object_r:cuttlefish_host_resources_var_run_t,s0)

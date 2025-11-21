@@ -1,0 +1,115 @@
+policy_module(cuttlefish_operator, 1.0.0)
+
+########################################
+#
+# Cuttlefish Operator Policy
+#
+# This policy allows the cuttlefish-operator service to:
+# - Generate TLS certificates using openssl
+# - Run WebRTC signaling server
+# - Create Unix sockets in /run/cuttlefish/
+# - Bind to configured HTTP/HTTPS ports
+# - Serve web UI content
+#
+########################################
+
+require {
+    type init_t;
+    type unconfined_t;
+    type cert_t;
+    type http_port_t;
+    type unreserved_port_t;
+    class tcp_socket { create bind listen accept read write };
+    class unix_stream_socket { create bind listen accept read write };
+    class file { read write open create getattr setattr };
+    class dir { read write add_name create setattr };
+    class capability { net_bind_service };
+}
+
+########################################
+# Type declarations
+########################################
+
+type cuttlefish_operator_t;
+type cuttlefish_operator_exec_t;
+init_daemon_domain(cuttlefish_operator_t, cuttlefish_operator_exec_t)
+
+type cuttlefish_operator_var_run_t;
+files_pid_file(cuttlefish_operator_var_run_t)
+
+type cuttlefish_operator_cert_t;
+files_type(cuttlefish_operator_cert_t)
+
+########################################
+# Local policy
+########################################
+
+# Allow binding to network ports
+allow cuttlefish_operator_t self:capability net_bind_service;
+allow cuttlefish_operator_t self:tcp_socket { create bind listen accept read write };
+
+# Allow HTTP/HTTPS port access (1080/1443)
+allow cuttlefish_operator_t http_port_t:tcp_socket { name_bind };
+allow cuttlefish_operator_t unreserved_port_t:tcp_socket { name_bind };
+
+# Allow Unix socket operations in /run/cuttlefish/
+allow cuttlefish_operator_t self:unix_stream_socket { create bind listen accept read write };
+allow cuttlefish_operator_t cuttlefish_operator_var_run_t:dir { read write add_name create setattr };
+allow cuttlefish_operator_t cuttlefish_operator_var_run_t:file { read write open create getattr setattr };
+
+# Allow TLS certificate generation
+allow cuttlefish_operator_t cuttlefish_operator_cert_t:dir { read write add_name create setattr };
+allow cuttlefish_operator_t cuttlefish_operator_cert_t:file { read write open create getattr setattr };
+
+# Allow execution of openssl for certificate generation
+miscfiles_read_generic_certs(cuttlefish_operator_t)
+corecmd_exec_bin(cuttlefish_operator_t)
+
+# Network operations
+corenet_tcp_bind_generic_node(cuttlefish_operator_t)
+corenet_tcp_bind_all_unreserved_ports(cuttlefish_operator_t)
+corenet_tcp_connect_all_ports(cuttlefish_operator_t)
+
+# Allow reading web UI content
+files_read_usr_files(cuttlefish_operator_t)
+
+# Logging
+logging_send_syslog_msg(cuttlefish_operator_t)
+
+# Allow systemd operations
+init_read_state(cuttlefish_operator_t)
+init_stream_connect(cuttlefish_operator_t)
+
+# Basic system operations
+kernel_read_system_state(cuttlefish_operator_t)
+kernel_read_network_state(cuttlefish_operator_t)
+
+########################################
+# SELinux booleans
+########################################
+
+## <desc>
+## <p>
+## Allow cuttlefish_operator to use TLS certificates
+## </p>
+## </desc>
+gen_tunable(cuttlefish_tls, true)
+
+tunable_policy(`cuttlefish_tls',`
+    # Allow certificate operations
+    allow cuttlefish_operator_t cert_t:dir search;
+    allow cuttlefish_operator_t cert_t:file { read open };
+')
+
+## <desc>
+## <p>
+## Allow cuttlefish_operator to connect to any port
+## </p>
+## </desc>
+gen_tunable(cuttlefish_connect_any, false)
+
+tunable_policy(`cuttlefish_connect_any',`
+    # Allow connections to any port (for development)
+    corenet_tcp_connect_all_ports(cuttlefish_operator_t)
+    corenet_udp_bind_all_ports(cuttlefish_operator_t)
+')

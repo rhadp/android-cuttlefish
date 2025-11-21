@@ -1,0 +1,12 @@
+# Cuttlefish Orchestration File Contexts
+#
+# This file defines the SELinux file contexts for the cuttlefish-host_orchestrator service
+
+# Host orchestrator binary
+/usr/lib/cuttlefish-common/bin/host_orchestrator  --  gen_context(system_u:object_r:cuttlefish_orchestration_exec_t,s0)
+
+# CVD artifacts directory
+/var/lib/cuttlefish-common(/.*)?  gen_context(system_u:object_r:cuttlefish_orchestration_var_lib_t,s0)
+
+# Web UI assets (shared with operator)
+/usr/share/cuttlefish-common/operator(/.*)?  gen_context(system_u:object_r:httpd_sys_content_t,s0)

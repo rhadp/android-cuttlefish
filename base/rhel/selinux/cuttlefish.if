@@ -1,0 +1,123 @@
+## <summary>Cuttlefish Android Virtual Device</summary>
+
+########################################
+## <summary>
+##	Read cuttlefish configuration files
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`cuttlefish_read_config',`
+	gen_require(`
+		type cuttlefish_host_resources_exec_t;
+	')
+
+	files_search_etc($1)
+	read_files_pattern($1, cuttlefish_host_resources_exec_t, cuttlefish_host_resources_exec_t)
+')
+
+########################################
+## <summary>
+##	Manage cuttlefish library files
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`cuttlefish_manage_lib_files',`
+	gen_require(`
+		type cuttlefish_orchestration_var_lib_t;
+	')
+
+	files_search_var_lib($1)
+	manage_files_pattern($1, cuttlefish_orchestration_var_lib_t, cuttlefish_orchestration_var_lib_t)
+	manage_dirs_pattern($1, cuttlefish_orchestration_var_lib_t, cuttlefish_orchestration_var_lib_t)
+')
+
+########################################
+## <summary>
+##	Connect to cuttlefish operator socket
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`cuttlefish_connect_operator',`
+	gen_require(`
+		type cuttlefish_operator_t;
+		type cuttlefish_operator_var_run_t;
+	')
+
+	files_search_pids($1)
+	stream_connect_pattern($1, cuttlefish_operator_var_run_t, cuttlefish_operator_var_run_t, cuttlefish_operator_t)
+')
+
+########################################
+## <summary>
+##	Read cuttlefish TLS certificates
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`cuttlefish_read_certs',`
+	gen_require(`
+		type cuttlefish_operator_cert_t;
+	')
+
+	read_files_pattern($1, cuttlefish_operator_cert_t, cuttlefish_operator_cert_t)
+	allow $1 cuttlefish_operator_cert_t:dir list_dir_perms;
+')
+
+########################################
+## <summary>
+##	All of the rules required to administrate
+##	a cuttlefish environment
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <param name="role">
+##	<summary>
+##	Role allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`cuttlefish_admin',`
+	gen_require(`
+		type cuttlefish_host_resources_t;
+		type cuttlefish_operator_t;
+		type cuttlefish_orchestration_t;
+		type cuttlefish_host_resources_var_run_t;
+		type cuttlefish_operator_var_run_t;
+		type cuttlefish_orchestration_var_lib_t;
+	')
+
+	allow $1 cuttlefish_host_resources_t:process { ptrace signal_perms };
+	ps_process_pattern($1, cuttlefish_host_resources_t)
+
+	allow $1 cuttlefish_operator_t:process { ptrace signal_perms };
+	ps_process_pattern($1, cuttlefish_operator_t)
+
+	allow $1 cuttlefish_orchestration_t:process { ptrace signal_perms };
+	ps_process_pattern($1, cuttlefish_orchestration_t)
+
+	files_search_pids($1)
+	admin_pattern($1, cuttlefish_host_resources_var_run_t)
+	admin_pattern($1, cuttlefish_operator_var_run_t)
+
+	files_search_var_lib($1)
+	admin_pattern($1, cuttlefish_orchestration_var_lib_t)
+')

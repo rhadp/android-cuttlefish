@@ -1,0 +1,133 @@
+policy_module(cuttlefish_host_resources, 1.0.0)
+
+########################################
+#
+# Cuttlefish Host Resources Policy
+#
+# This policy allows the cuttlefish-host-resources service to:
+# - Create and manage network bridges (cvd-ebr, cvd-wbr)
+# - Create and manage tap interfaces
+# - Run dnsmasq for DHCP services
+# - Configure NAT rules via iptables or firewalld
+# - Load kernel modules (bridge, vhost-net, vhost-vsock)
+# - Access KVM and vhost devices
+#
+########################################
+
+require {
+    type initrc_t;
+    type kernel_t;
+    type init_t;
+    type unconfined_t;
+    type ifconfig_t;
+    type iptables_t;
+    type dnsmasq_t;
+    type modules_object_t;
+    type device_t;
+    type sysfs_t;
+    type proc_net_t;
+    type node_t;
+    type firewalld_t;
+    class capability { net_admin net_raw sys_module sys_admin };
+    class netlink_route_socket { create bind write read nlmsg_read nlmsg_write };
+    class file { read write open execute };
+    class chr_file { read write open ioctl };
+    class system module_load;
+}
+
+########################################
+# Type declarations
+########################################
+
+type cuttlefish_host_resources_t;
+type cuttlefish_host_resources_exec_t;
+init_daemon_domain(cuttlefish_host_resources_t, cuttlefish_host_resources_exec_t)
+
+########################################
+# Local policy
+########################################
+
+# Allow capabilities needed for network configuration
+allow cuttlefish_host_resources_t self:capability { net_admin net_raw sys_module sys_admin };
+
+# Allow netlink socket operations for network configuration
+allow cuttlefish_host_resources_t self:netlink_route_socket { create bind write read nlmsg_read nlmsg_write };
+
+# Allow execution of network configuration tools
+allow cuttlefish_host_resources_t ifconfig_t:process transition;
+allow cuttlefish_host_resources_t iptables_t:process transition;
+
+# Allow running dnsmasq
+allow cuttlefish_host_resources_t dnsmasq_t:process transition;
+
+# Allow loading kernel modules
+allow cuttlefish_host_resources_t self:system module_load;
+allow cuttlefish_host_resources_t modules_object_t:file { read open };
+
+# Allow access to /dev/kvm, /dev/vhost-net, /dev/vhost-vsock
+allow cuttlefish_host_resources_t device_t:chr_file { read write open ioctl };
+
+# Allow reading /proc/net for network state
+allow cuttlefish_host_resources_t proc_net_t:file { read open };
+
+# Allow reading /sys for device information
+allow cuttlefish_host_resources_t sysfs_t:file { read open };
+
+# Allow communication with firewalld
+allow cuttlefish_host_resources_t firewalld_t:dbus send_msg;
+
+# Allow file operations in /run and /var/run
+files_pid_filetrans(cuttlefish_host_resources_t, cuttlefish_host_resources_var_run_t, { file dir })
+
+# Allow tmpfiles operations
+files_tmp_filetrans(cuttlefish_host_resources_t, cuttlefish_host_resources_tmp_t, { file dir })
+
+# Network operations
+corenet_tcp_bind_generic_node(cuttlefish_host_resources_t)
+corenet_udp_bind_generic_node(cuttlefish_host_resources_t)
+corenet_tcp_bind_generic_port(cuttlefish_host_resources_t)
+corenet_udp_bind_generic_port(cuttlefish_host_resources_t)
+
+# Allow shell execution
+corecmd_exec_shell(cuttlefish_host_resources_t)
+corecmd_exec_bin(cuttlefish_host_resources_t)
+
+# Basic system operations
+kernel_read_system_state(cuttlefish_host_resources_t)
+kernel_read_network_state(cuttlefish_host_resources_t)
+
+# Logging
+logging_send_syslog_msg(cuttlefish_host_resources_t)
+
+# Allow systemd operations
+init_read_state(cuttlefish_host_resources_t)
+init_stream_connect(cuttlefish_host_resources_t)
+
+########################################
+# SELinux booleans
+########################################
+
+## <desc>
+## <p>
+## Allow cuttlefish_host_resources to configure network interfaces and NAT
+## </p>
+## </desc>
+gen_tunable(cuttlefish_networking, true)
+
+tunable_policy(`cuttlefish_networking',`
+    # Additional network permissions when enabled
+    allow cuttlefish_host_resources_t node_t:tcp_socket node_bind;
+    allow cuttlefish_host_resources_t node_t:udp_socket node_bind;
+')
+
+## <desc>
+## <p>
+## Allow cuttlefish_host_resources to load kernel modules
+## </p>
+## </desc>
+gen_tunable(cuttlefish_kvm, true)
+
+tunable_policy(`cuttlefish_kvm',`
+    # Additional KVM permissions when enabled
+    allow cuttlefish_host_resources_t self:capability sys_module;
+')

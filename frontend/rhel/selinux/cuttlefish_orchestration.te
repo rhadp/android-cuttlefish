@@ -1,0 +1,103 @@
+policy_module(cuttlefish_orchestration, 1.0.0)
+
+########################################
+#
+# Cuttlefish Orchestration Policy
+#
+# This policy allows the cuttlefish-host_orchestrator service to:
+# - Integrate with nginx as reverse proxy
+# - Communicate with systemd-journal-gatewayd for logs
+# - Manage CVD artifacts in /var/lib/cuttlefish-common
+# - Bind to configured HTTP port (2080/2081)
+# - Download Android build artifacts
+#
+########################################
+
+require {
+    type init_t;
+    type unconfined_t;
+    type httpd_t;
+    type syslogd_t;
+    type unreserved_port_t;
+    class tcp_socket { create bind listen accept read write connect };
+    class file { read write open create getattr setattr unlink };
+    class dir { read write add_name create setattr remove_name };
+    class capability { net_bind_service dac_override };
+}
+
+########################################
+# Type declarations
+########################################
+
+type cuttlefish_orchestration_t;
+type cuttlefish_orchestration_exec_t;
+init_daemon_domain(cuttlefish_orchestration_t, cuttlefish_orchestration_exec_t)
+
+type cuttlefish_orchestration_var_lib_t;
+files_type(cuttlefish_orchestration_var_lib_t)
+
+########################################
+# Local policy
+########################################
+
+# Allow binding to network ports
+allow cuttlefish_orchestration_t self:capability { net_bind_service dac_override };
+allow cuttlefish_orchestration_t self:tcp_socket { create bind listen accept read write connect };
+
+# Allow binding to orchestrator port (2080/2081)
+allow cuttlefish_orchestration_t unreserved_port_t:tcp_socket { name_bind };
+
+# Allow managing artifacts directory
+allow cuttlefish_orchestration_t cuttlefish_orchestration_var_lib_t:dir { read write add_name create setattr remove_name };
+allow cuttlefish_orchestration_t cuttlefish_orchestration_var_lib_t:file { read write open create getattr setattr unlink };
+
+# Allow communication with nginx
+allow cuttlefish_orchestration_t httpd_t:tcp_socket { read write };
+allow httpd_t cuttlefish_orchestration_t:tcp_socket { read write };
+
+# Allow reading journal logs via systemd-journal-gatewayd
+allow cuttlefish_orchestration_t syslogd_t:unix_stream_socket connectto;
+
+# Network operations
+corenet_tcp_bind_generic_node(cuttlefish_orchestration_t)
+corenet_tcp_bind_all_unreserved_ports(cuttlefish_orchestration_t)
+corenet_tcp_connect_all_ports(cuttlefish_orchestration_t)
+corenet_tcp_connect_http_port(cuttlefish_orchestration_t)
+
+# Allow HTTP client operations (for downloading artifacts)
+miscfiles_read_generic_certs(cuttlefish_orchestration_t)
+
+# Allow reading web UI content
+files_read_usr_files(cuttlefish_orchestration_t)
+
+# Logging
+logging_send_syslog_msg(cuttlefish_orchestration_t)
+
+# Allow systemd operations
+init_read_state(cuttlefish_orchestration_t)
+init_stream_connect(cuttlefish_orchestration_t)
+
+# Basic system operations
+kernel_read_system_state(cuttlefish_orchestration_t)
+kernel_read_network_state(cuttlefish_orchestration_t)
+
+# Allow shell execution for running CVD instances
+corecmd_exec_shell(cuttlefish_orchestration_t)
+corecmd_exec_bin(cuttlefish_orchestration_t)
+
+########################################
+# SELinux booleans
+########################################
+
+## <desc>
+## <p>
+## Allow cuttlefish_orchestration to download artifacts over HTTP/HTTPS
+## </p>
+## </desc>
+gen_tunable(cuttlefish_download_artifacts, true)
+
+tunable_policy(`cuttlefish_download_artifacts',`
+    # Allow HTTP/HTTPS connections for artifact downloads
+    corenet_tcp_connect_http_port(cuttlefish_orchestration_t)
+    corenet_tcp_connect_http_cache_port(cuttlefish_orchestration_t)
+')
