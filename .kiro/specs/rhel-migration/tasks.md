@@ -367,12 +367,12 @@
     - Add initial entry
     - _Requirements: 4.1_
 
-- [ ] 6. Complete cuttlefish-orchestration RPM spec file
-  - [ ] 6.1 Add %description section
+- [x] 6. Complete cuttlefish-orchestration RPM spec file
+  - [x] 6.1 Add %description section
     - Copy description from frontend/debian/control
     - _Requirements: 4.1_
-  
-  - [ ] 6.2 Add %prep and %build sections
+
+  - [x] 6.2 Add %prep and %build sections
     - Add %setup -q -n cuttlefish-frontend-%{version}
     - Build host_orchestrator binary with RHEL-compliant flags:
       - -buildmode=pie
@@ -381,8 +381,8 @@
     - Set CGO_ENABLED=1
     - Reference frontend/debian/rules
     - _Requirements: 2.7, 4.1_
-  
-  - [ ] 6.3 Add %install section
+
+  - [x] 6.3 Add %install section
     - Install host_orchestrator binary
     - Install systemd unit file
     - Install config file to /etc/sysconfig/
@@ -390,22 +390,22 @@
     - Install nginx configuration to /etc/nginx/conf.d/cuttlefish-orchestration.conf (RHEL path, not sites-available)
     - Reference frontend/debian/cuttlefish-orchestration.install
     - _Requirements: 4.1, 4.3_
-  
-  - [ ] 6.4 Add %files section
+
+  - [x] 6.4 Add %files section
     - List all installed files
     - Use %config(noreplace) for config files
     - _Requirements: 4.1, 4.3_
-  
-  - [ ] 6.5 Add %pre section for user creation
+
+  - [x] 6.5 Add %pre section for user creation
     - Create httpcvd user with useradd -r
     - Add user to cvdnetwork group
     - _Requirements: 8.3, 8.4_
-  
-  - [ ] 6.6 Add %post, %preun, %postun sections
+
+  - [x] 6.6 Add %post, %preun, %postun sections
     - Use systemd macros for cuttlefish-host_orchestrator.service
     - _Requirements: 4.5_
-  
-  - [ ] 6.7 Add %changelog section
+
+  - [x] 6.7 Add %changelog section
     - Add initial entry
     - _Requirements: 4.1_
 
