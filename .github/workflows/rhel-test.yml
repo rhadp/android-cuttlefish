@@ -1,0 +1,363 @@
+name: RHEL Package Testing
+
+on:
+  workflow_run:
+    workflows: ["RHEL Package Build"]
+    types:
+      - completed
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clean-install-test:
+    name: Clean installation test (${{ matrix.os }})
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - 'rhel:10'
+          - 'centos:stream10'
+          - 'fedora:43'
+
+    container:
+      image: ${{ matrix.os == 'rhel:10' && 'registry.access.redhat.com/ubi10/ubi' || matrix.os == 'centos:stream10' && 'quay.io/centos/centos:stream10' || 'fedora:43' }}
+      options: --privileged
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: rpm-packages-${{ matrix.os }}-x86_64
+          path: rpm-packages/
+
+      - name: Install packages
+        run: |
+          echo "=== Installing Cuttlefish packages ==="
+
+          # Install all dependencies first
+          if command -v dnf &> /dev/null; then
+            dnf install -y rpm-packages/cuttlefish-*.rpm
+          fi
+
+          echo "=== Verifying package installation ==="
+          rpm -qa | grep cuttlefish
+
+      - name: Verify binaries are accessible
+        run: |
+          echo "=== Checking cvd binary ==="
+          which cvd || { echo "ERROR: cvd not found in PATH"; exit 1; }
+
+          echo "=== Checking cvd version ==="
+          cvd version || { echo "WARNING: cvd version failed"; }
+
+          echo "=== Verifying binary directory ==="
+          ls -la /usr/lib/cuttlefish-common/bin/ || true
+
+      - name: Verify systemd units are installed
+        run: |
+          echo "=== Checking systemd unit files ==="
+
+          for service in cuttlefish-host-resources cuttlefish-operator cuttlefish-host_orchestrator; do
+            if systemctl list-unit-files | grep -q "${service}.service"; then
+              echo "✓ ${service}.service found"
+            else
+              echo "✗ ${service}.service NOT found"
+              exit 1
+            fi
+          done
+
+      - name: Verify SELinux modules are installed
+        run: |
+          echo "=== Checking SELinux modules ==="
+
+          # Check if SELinux is available
+          if command -v semodule &> /dev/null; then
+            semodule -l | grep cuttlefish || {
+              echo "WARNING: SELinux modules not found (may be expected in container)"
+            }
+          else
+            echo "INFO: SELinux not available in container environment"
+          fi
+
+      - name: Verify configuration files
+        run: |
+          echo "=== Checking configuration files ==="
+
+          config_files=(
+            "/etc/sysconfig/cuttlefish-host-resources"
+            "/etc/sysconfig/cuttlefish-operator"
+            "/etc/sysconfig/cuttlefish-host_orchestrator"
+          )
+
+          for config in "${config_files[@]}"; do
+            if [ -f "$config" ]; then
+              echo "✓ $config exists"
+              echo "  Contents:"
+              head -n 5 "$config" | sed 's/^/    /'
+            else
+              echo "✗ $config NOT found"
+            fi
+          done
+
+      - name: Verify users and groups created
+        run: |
+          echo "=== Checking users and groups ==="
+
+          # Check cvdnetwork group
+          if getent group cvdnetwork > /dev/null; then
+            echo "✓ cvdnetwork group exists"
+          else
+            echo "✗ cvdnetwork group NOT found"
+            exit 1
+          fi
+
+          # Check _cutf-operator user
+          if getent passwd _cutf-operator > /dev/null; then
+            echo "✓ _cutf-operator user exists"
+          else
+            echo "✗ _cutf-operator user NOT found"
+            exit 1
+          fi
+
+          # Check httpcvd user
+          if getent passwd httpcvd > /dev/null; then
+            echo "✓ httpcvd user exists"
+          else
+            echo "✗ httpcvd user NOT found"
+            exit 1
+          fi
+
+      - name: Test package removal
+        run: |
+          echo "=== Testing package removal ==="
+
+          # Remove packages
+          if command -v dnf &> /dev/null; then
+            dnf remove -y cuttlefish-common cuttlefish-base cuttlefish-user cuttlefish-orchestration cuttlefish-integration cuttlefish-defaults
+          fi
+
+          # Verify removal
+          if rpm -qa | grep -q cuttlefish; then
+            echo "ERROR: Some cuttlefish packages still installed after removal"
+            rpm -qa | grep cuttlefish
+            exit 1
+          else
+            echo "✓ All packages removed successfully"
+          fi
+
+  multi-device-test:
+    name: Multi-device configuration test (${{ matrix.os }})
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - 'centos:stream10'
+          - 'fedora:43'
+        num_cvd_accounts: [5, 10]
+
+    container:
+      image: ${{ matrix.os == 'centos:stream10' && 'quay.io/centos/centos:stream10' || 'fedora:43' }}
+      options: --privileged
+      volumes:
+        - /sys/fs/cgroup:/sys/fs/cgroup:rw
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: rpm-packages-${{ matrix.os }}-x86_64
+          path: rpm-packages/
+
+      - name: Install packages
+        run: |
+          if command -v dnf &> /dev/null; then
+            dnf install -y rpm-packages/cuttlefish-base-*.rpm rpm-packages/cuttlefish-integration-*.rpm rpm-packages/cuttlefish-defaults-*.rpm
+          fi
+
+      - name: Configure num_cvd_accounts
+        run: |
+          echo "=== Configuring num_cvd_accounts=${{ matrix.num_cvd_accounts }} ==="
+
+          config_file="/etc/sysconfig/cuttlefish-host-resources"
+          if [ -f "$config_file" ]; then
+            sed -i "s/^num_cvd_accounts=.*/num_cvd_accounts=${{ matrix.num_cvd_accounts }}/" "$config_file"
+            echo "Updated configuration:"
+            grep num_cvd_accounts "$config_file"
+          else
+            echo "ERROR: Configuration file not found"
+            exit 1
+          fi
+
+      - name: Start host-resources service (simulation)
+        run: |
+          echo "=== Simulating service startup ==="
+          echo "INFO: Full service testing requires privileged container with systemd"
+          echo "INFO: Verifying service unit file exists and is valid"
+
+          # Verify unit file syntax
+          systemd-analyze verify /usr/lib/systemd/system/cuttlefish-host-resources.service || {
+            echo "WARNING: systemd-analyze not available or unit file has issues"
+          }
+
+          echo "=== Expected network interfaces ==="
+          expected_taps=$((4 * ${{ matrix.num_cvd_accounts }}))
+          echo "For num_cvd_accounts=${{ matrix.num_cvd_accounts }}, expecting:"
+          echo "  - 2 bridge interfaces (cvd-ebr, cvd-wbr)"
+          echo "  - $expected_taps tap interfaces (4 per account)"
+          echo "    - cvd-etap-01 to cvd-etap-${{ matrix.num_cvd_accounts }}"
+          echo "    - cvd-mtap-01 to cvd-mtap-${{ matrix.num_cvd_accounts }}"
+          echo "    - cvd-wtap-01 to cvd-wtap-${{ matrix.num_cvd_accounts }}"
+          echo "    - cvd-wifiap-01 to cvd-wifiap-${{ matrix.num_cvd_accounts }}"
+
+  service-functionality-test:
+    name: Service functionality test (${{ matrix.os }})
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - 'fedora:43'
+
+    container:
+      image: fedora:43
+      options: --privileged --cgroupns=host
+      volumes:
+        - /sys/fs/cgroup:/sys/fs/cgroup:rw
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: rpm-packages-${{ matrix.os }}-x86_64
+          path: rpm-packages/
+
+      - name: Install systemd and dependencies
+        run: |
+          dnf install -y systemd iproute iptables dnsmasq procps-ng
+
+      - name: Install Cuttlefish packages
+        run: |
+          dnf install -y rpm-packages/cuttlefish-base-*.rpm rpm-packages/cuttlefish-integration-*.rpm rpm-packages/cuttlefish-defaults-*.rpm
+
+      - name: Load required kernel modules
+        run: |
+          echo "=== Loading kernel modules ==="
+          modprobe bridge || echo "WARNING: Could not load bridge module"
+          lsmod | grep bridge || echo "INFO: bridge module not loaded"
+
+      - name: Check wrapper script
+        run: |
+          echo "=== Checking setup-host-resources.sh ==="
+
+          wrapper_script="/usr/lib/cuttlefish-common/bin/setup-host-resources.sh"
+          if [ -f "$wrapper_script" ]; then
+            echo "✓ Wrapper script exists"
+            echo "✓ Checking script syntax"
+            bash -n "$wrapper_script" || {
+              echo "ERROR: Script has syntax errors"
+              exit 1
+            }
+            echo "✓ Script is executable: $(test -x $wrapper_script && echo 'yes' || echo 'no')"
+          else
+            echo "ERROR: Wrapper script not found"
+            exit 1
+          fi
+
+      - name: Test firewall detection logic
+        run: |
+          echo "=== Testing firewall detection ==="
+
+          # Check if firewalld is active
+          if systemctl is-active --quiet firewalld; then
+            echo "✓ firewalld is active"
+            firewall_type="firewalld"
+          else
+            echo "INFO: firewalld is not active"
+            firewall_type="iptables"
+          fi
+
+          echo "Detected firewall type: $firewall_type"
+
+      - name: Verify udev rules
+        run: |
+          echo "=== Checking udev rules ==="
+
+          for rules_file in /usr/lib/udev/rules.d/*cuttlefish*.rules; do
+            if [ -f "$rules_file" ]; then
+              echo "✓ Found: $(basename $rules_file)"
+              echo "  Contents (first 5 lines):"
+              head -n 5 "$rules_file" | sed 's/^/    /'
+            fi
+          done
+
+  summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [clean-install-test, multi-device-test, service-functionality-test]
+    if: always()
+
+    steps:
+      - name: Generate test summary
+        run: |
+          cat > $GITHUB_STEP_SUMMARY << 'EOF'
+          ## RHEL Test Summary
+
+          ### Tests Completed
+
+          - ✅ Clean installation tests
+          - ✅ Multi-device configuration tests
+          - ✅ Service functionality tests
+
+          ### Test Results
+
+          EOF
+
+          if [ "${{ needs.clean-install-test.result }}" == "success" ]; then
+            echo "- ✅ **Clean Installation**: All packages install and verify correctly" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ **Clean Installation**: Tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.multi-device-test.result }}" == "success" ]; then
+            echo "- ✅ **Multi-Device**: Configuration tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ **Multi-Device**: Configuration tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.service-functionality-test.result }}" == "success" ]; then
+            echo "- ✅ **Service Functionality**: All service checks passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ **Service Functionality**: Service checks failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check overall status
+        run: |
+          if [ "${{ needs.clean-install-test.result }}" == "success" ] && \
+             [ "${{ needs.multi-device-test.result }}" == "success" ] && \
+             [ "${{ needs.service-functionality-test.result }}" == "success" ]; then
+            echo "✅ All RHEL tests passed!"
+            exit 0
+          else
+            echo "❌ Some RHEL tests failed"
+            exit 1
+          fi

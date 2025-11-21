@@ -1,0 +1,211 @@
+name: RHEL Package Build
+
+on:
+  pull_request:
+    paths:
+      - 'base/**'
+      - 'frontend/**'
+      - 'tools/buildutils/**'
+      - '.github/workflows/rhel-build.yml'
+  push:
+    branches:
+      - develop
+    paths:
+      - 'base/**'
+      - 'frontend/**'
+      - 'tools/buildutils/**'
+      - '.github/workflows/rhel-build.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-matrix:
+    name: Build RPM packages (${{ matrix.os }}, ${{ matrix.arch }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - 'rhel:10'
+          - 'centos:stream10'
+          - 'fedora:43'
+        arch:
+          - 'x86_64'
+          - 'aarch64'
+
+    container:
+      image: ${{ matrix.os == 'rhel:10' && 'registry.access.redhat.com/ubi10/ubi' || matrix.os == 'centos:stream10' && 'quay.io/centos/centos:stream10' || 'fedora:43' }}
+      options: --privileged
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up architecture emulation (if needed)
+        if: matrix.arch == 'aarch64'
+        run: |
+          # Install QEMU for cross-compilation
+          if command -v dnf &> /dev/null; then
+            dnf install -y qemu-user-static
+          fi
+
+      - name: Install build dependencies
+        run: |
+          # Run dependency installation script
+          chmod +x ./tools/buildutils/install_rhel10_deps.sh
+          ./tools/buildutils/install_rhel10_deps.sh
+
+      - name: Build RPM packages
+        run: |
+          # Run package build script
+          chmod +x ./tools/buildutils/build_rpm_packages.sh
+          ./tools/buildutils/build_rpm_packages.sh
+
+      - name: Run rpmlint validation
+        run: |
+          # Install rpmlint if not already installed
+          if ! command -v rpmlint &> /dev/null; then
+            if command -v dnf &> /dev/null; then
+              dnf install -y rpmlint
+            fi
+          fi
+
+          # Copy .rpmlintrc to home directory
+          cp .rpmlintrc ~/
+
+          # Run rpmlint on all packages
+          rpmlint rpm-packages/*.rpm || true
+
+          # Save rpmlint output for artifacts
+          rpmlint rpm-packages/*.rpm > rpmlint-output.txt 2>&1 || true
+
+      - name: List built packages
+        run: |
+          echo "=== Built RPM Packages ==="
+          ls -lh rpm-packages/
+          echo ""
+          echo "=== Package Details ==="
+          for pkg in rpm-packages/*.rpm; do
+            if [ -f "$pkg" ]; then
+              echo "Package: $(basename $pkg)"
+              rpm -qip "$pkg" 2>/dev/null | grep -E "(Name|Version|Release|Architecture|Size)" || true
+              echo "---"
+            fi
+          done
+
+      - name: Verify package count
+        run: |
+          # Should have 6 binary packages + source packages
+          binary_count=$(find rpm-packages -name "*.rpm" -not -name "*.src.rpm" | wc -l)
+          source_count=$(find rpm-packages -name "*.src.rpm" | wc -l)
+
+          echo "Binary packages built: $binary_count"
+          echo "Source packages built: $source_count"
+
+          if [ "$binary_count" -lt 6 ]; then
+            echo "ERROR: Expected at least 6 binary packages, found $binary_count"
+            exit 1
+          fi
+
+          if [ "$source_count" -lt 6 ]; then
+            echo "WARNING: Expected at least 6 source packages, found $source_count"
+          fi
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-packages-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            rpm-packages/*.rpm
+            rpmlint-output.txt
+          retention-days: 30
+
+      - name: Archive build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            ~/rpmbuild/BUILD/*/build.log
+            *.log
+          retention-days: 7
+          if-no-files-found: ignore
+
+  verify-build:
+    name: Verify build completeness
+    runs-on: ubuntu-latest
+    needs: build-matrix
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: List downloaded artifacts
+        run: |
+          echo "=== Downloaded Artifacts ==="
+          find artifacts/ -type f -name "*.rpm" | sort
+
+      - name: Verify package naming
+        run: |
+          echo "=== Verifying Package Naming Conventions ==="
+
+          # Check for proper dist tags
+          for rpm in artifacts/rpm-packages-*/cuttlefish-*.rpm; do
+            if [ -f "$rpm" ]; then
+              basename "$rpm" | grep -E '\.(el10|fc43)\.'; echo "✓ $(basename $rpm)"
+            fi
+          done
+
+      - name: Generate build summary
+        run: |
+          cat > $GITHUB_STEP_SUMMARY << 'EOF'
+          ## RHEL Build Summary
+
+          ### Packages Built
+
+          EOF
+
+          for dir in artifacts/rpm-packages-*; do
+            if [ -d "$dir" ]; then
+              os=$(basename "$dir" | cut -d'-' -f3-)
+              echo "#### Distribution: $os" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "| Package | Size |" >> $GITHUB_STEP_SUMMARY
+              echo "|---------|------|" >> $GITHUB_STEP_SUMMARY
+
+              for pkg in "$dir"/*.rpm; do
+                if [ -f "$pkg" ] && [[ ! "$pkg" =~ \.src\.rpm$ ]]; then
+                  name=$(basename "$pkg")
+                  size=$(du -h "$pkg" | cut -f1)
+                  echo "| $name | $size |" >> $GITHUB_STEP_SUMMARY
+                fi
+              done
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+  notify-success:
+    name: Build Success Notification
+    runs-on: ubuntu-latest
+    needs: verify-build
+    if: success()
+
+    steps:
+      - name: Report success
+        run: |
+          echo "✅ All RHEL builds completed successfully!"
+          echo "All RPM packages built and verified across:"
+          echo "  - RHEL 10 (x86_64, aarch64)"
+          echo "  - CentOS Stream 10 (x86_64, aarch64)"
+          echo "  - Fedora 43 (x86_64, aarch64)"

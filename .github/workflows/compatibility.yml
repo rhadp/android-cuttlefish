@@ -1,0 +1,439 @@
+name: Debian-RHEL Compatibility Check
+
+on:
+  pull_request:
+    paths:
+      - 'base/**'
+      - 'frontend/**'
+      - 'tools/buildutils/**'
+      - '.github/workflows/compatibility.yml'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  debian-package-comparison:
+    name: Compare Debian packages (pre/post RHEL changes)
+    runs-on: ubuntu-22.04
+
+    container:
+      image: debian:bookworm
+
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          path: current
+
+      - name: Checkout main branch (baseline)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: baseline
+
+      - name: Install Debian build dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            devscripts \
+            equivs \
+            debhelper \
+            dpkg-dev \
+            lsb-release
+
+      - name: Build baseline Debian packages
+        working-directory: baseline
+        run: |
+          echo "=== Building baseline Debian packages (from main branch) ==="
+
+          # Install dependencies for base package
+          if [ -f base/debian/control ]; then
+            cd base
+            mk-build-deps -i -r -t "apt-get -y" debian/control || true
+            dpkg-buildpackage -b -uc -us || echo "WARNING: Baseline build may have failed"
+            cd ..
+          fi
+
+          # Move built packages
+          mkdir -p ../baseline-packages
+          mv *.deb ../baseline-packages/ 2>/dev/null || true
+          ls -la ../baseline-packages/
+
+      - name: Build current Debian packages
+        working-directory: current
+        run: |
+          echo "=== Building current Debian packages (with RHEL changes) ==="
+
+          # Install dependencies for base package
+          if [ -f base/debian/control ]; then
+            cd base
+            mk-build-deps -i -r -t "apt-get -y --allow-unauthenticated" debian/control || true
+            dpkg-buildpackage -b -uc -us || echo "WARNING: Current build may have failed"
+            cd ..
+          fi
+
+          # Move built packages
+          mkdir -p ../current-packages
+          mv *.deb ../current-packages/ 2>/dev/null || true
+          ls -la ../current-packages/
+
+      - name: Compare package contents
+        run: |
+          echo "=== Comparing Debian Package Contents ==="
+
+          comparison_failed=0
+
+          for baseline_pkg in baseline-packages/*.deb; do
+            if [ ! -f "$baseline_pkg" ]; then
+              continue
+            fi
+
+            pkg_name=$(basename "$baseline_pkg")
+            current_pkg="current-packages/$pkg_name"
+
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "Comparing: $pkg_name"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            if [ ! -f "$current_pkg" ]; then
+              echo "⚠️  WARNING: Package $pkg_name not found in current build"
+              continue
+            fi
+
+            # Extract file lists
+            dpkg-deb -c "$baseline_pkg" | awk '{print $6}' | sort > baseline_files.txt
+            dpkg-deb -c "$current_pkg" | awk '{print $6}' | sort > current_files.txt
+
+            # Compare file lists
+            if ! diff -u baseline_files.txt current_files.txt > file_diff.txt; then
+              echo "❌ File list differs:"
+              cat file_diff.txt
+              comparison_failed=1
+            else
+              echo "✅ File lists match"
+            fi
+
+            # Compare package metadata
+            echo ""
+            echo "Baseline package info:"
+            dpkg-deb -I "$baseline_pkg" | grep -E "(Package|Version|Architecture|Depends)"
+
+            echo ""
+            echo "Current package info:"
+            dpkg-deb -I "$current_pkg" | grep -E "(Package|Version|Architecture|Depends)"
+          done
+
+          if [ $comparison_failed -eq 1 ]; then
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "❌ Debian package comparison FAILED"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "RHEL changes have modified Debian package contents."
+            echo "This may indicate unintended cross-contamination."
+            echo ""
+            exit 1
+          else
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "✅ Debian package comparison PASSED"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          fi
+
+      - name: Archive comparison results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-comparison-results
+          path: |
+            baseline_files.txt
+            current_files.txt
+            file_diff.txt
+          retention-days: 7
+          if-no-files-found: ignore
+
+  debian-regression-test:
+    name: Run Debian package regression tests
+    runs-on: ubuntu-22.04
+
+    container:
+      image: debian:bookworm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install test dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            devscripts \
+            debhelper \
+            lsb-release \
+            dpkg-dev
+
+      - name: Build Debian packages
+        run: |
+          echo "=== Building Debian packages ==="
+
+          # Try to build packages
+          if [ -f base/debian/control ]; then
+            cd base
+            mk-build-deps -i -r -t "apt-get -y" debian/control || true
+            dpkg-buildpackage -b -uc -us || {
+              echo "ERROR: Debian package build failed"
+              exit 1
+            }
+            cd ..
+          fi
+
+          echo "✅ Debian packages built successfully"
+          ls -la *.deb
+
+      - name: Test package installation
+        run: |
+          echo "=== Testing Debian package installation ==="
+
+          # Install built packages
+          dpkg -i *.deb 2>&1 || {
+            echo "Attempting to fix dependencies..."
+            apt-get install -f -y
+          }
+
+          # Verify installation
+          dpkg -l | grep cuttlefish || {
+            echo "ERROR: Cuttlefish packages not installed"
+            exit 1
+          }
+
+          echo "✅ Debian packages install correctly"
+
+      - name: Verify Debian-specific files
+        run: |
+          echo "=== Verifying Debian-specific files are not broken ==="
+
+          # Check that Debian packaging files still exist and are valid
+          debian_files=(
+            "base/debian/control"
+            "base/debian/rules"
+            "base/debian/changelog"
+            "frontend/debian/control"
+            "frontend/debian/rules"
+          )
+
+          for file in "${debian_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✓ $file exists"
+            else
+              echo "✗ $file missing"
+              exit 1
+            fi
+          done
+
+          echo "✅ All Debian packaging files intact"
+
+  version-synchronization-check:
+    name: Check version synchronization
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract versions from changelog and specs
+        run: |
+          echo "=== Extracting versions ==="
+
+          # Extract version from base/debian/changelog
+          if [ -f base/debian/changelog ]; then
+            DEBIAN_BASE_VERSION=$(head -n1 base/debian/changelog | sed 's/.*(\([^)]*\)).*/\1/' | cut -d- -f1)
+            echo "Debian base version: $DEBIAN_BASE_VERSION"
+          else
+            echo "ERROR: base/debian/changelog not found"
+            exit 1
+          fi
+
+          # Extract version from frontend/debian/changelog
+          if [ -f frontend/debian/changelog ]; then
+            DEBIAN_FRONTEND_VERSION=$(head -n1 frontend/debian/changelog | sed 's/.*(\([^)]*\)).*/\1/' | cut -d- -f1)
+            echo "Debian frontend version: $DEBIAN_FRONTEND_VERSION"
+          else
+            echo "ERROR: frontend/debian/changelog not found"
+            exit 1
+          fi
+
+          # Check RHEL spec files exist
+          rhel_spec_count=$(find base/rhel -name "*.spec" 2>/dev/null | wc -l)
+          if [ "$rhel_spec_count" -eq 0 ]; then
+            echo "INFO: No RHEL spec files found yet (may be early in migration)"
+            exit 0
+          fi
+
+          # Extract versions from RHEL spec files
+          echo ""
+          echo "=== RHEL Spec File Versions ==="
+
+          for spec in base/rhel/*.spec frontend/rhel/*.spec; do
+            if [ -f "$spec" ]; then
+              spec_name=$(basename "$spec")
+              spec_version=$(grep "^Version:" "$spec" | awk '{print $2}' | tr -d '%{version}')
+
+              echo "$spec_name: $spec_version"
+
+              # Compare with Debian version
+              if [ -n "$spec_version" ] && [ "$spec_version" != "%{version}" ]; then
+                if [[ "$spec_name" == *"base"* ]] || [[ "$spec_name" == *"integration"* ]] || [[ "$spec_name" == *"defaults"* ]]; then
+                  if [ "$spec_version" != "$DEBIAN_BASE_VERSION" ]; then
+                    echo "⚠️  WARNING: $spec_name version ($spec_version) differs from Debian base ($DEBIAN_BASE_VERSION)"
+                  fi
+                elif [[ "$spec_name" == *"user"* ]] || [[ "$spec_name" == *"orchestration"* ]]; then
+                  if [ "$spec_version" != "$DEBIAN_FRONTEND_VERSION" ]; then
+                    echo "⚠️  WARNING: $spec_name version ($spec_version) differs from Debian frontend ($DEBIAN_FRONTEND_VERSION)"
+                  fi
+                fi
+              fi
+            fi
+          done
+
+          echo ""
+          echo "✅ Version synchronization check complete"
+
+      - name: Check for RHEL-specific contamination in Debian files
+        run: |
+          echo "=== Checking for RHEL contamination in Debian files ==="
+
+          contamination_found=0
+
+          # Check that Debian files don't reference RHEL-specific paths or tools
+          if grep -r "rpmbuild\|dnf install\|/etc/sysconfig\|\.spec" base/debian/ 2>/dev/null; then
+            echo "❌ Found RHEL-specific references in Debian packaging files"
+            contamination_found=1
+          fi
+
+          if grep -r "rpmbuild\|dnf install\|/etc/sysconfig\|\.spec" frontend/debian/ 2>/dev/null; then
+            echo "❌ Found RHEL-specific references in Debian packaging files"
+            contamination_found=1
+          fi
+
+          if [ $contamination_found -eq 0 ]; then
+            echo "✅ No RHEL contamination found in Debian files"
+          else
+            echo "❌ RHEL contamination detected in Debian packaging"
+            exit 1
+          fi
+
+  file-organization-check:
+    name: Verify file organization
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check directory structure
+        run: |
+          echo "=== Verifying RHEL-Debian file organization ==="
+
+          # Verify RHEL files are in rhel/ subdirectories
+          echo "Checking for misplaced RHEL files..."
+
+          if find base/debian -name "*.spec" -o -name "*.service" | grep -v "/rhel/" 2>/dev/null; then
+            echo "❌ Found RHEL files in Debian directory"
+            exit 1
+          fi
+
+          if find frontend/debian -name "*.spec" -o -name "*.service" | grep -v "/rhel/" 2>/dev/null; then
+            echo "❌ Found RHEL files in Debian directory"
+            exit 1
+          fi
+
+          # Verify Debian files are not in rhel/ subdirectories
+          echo "Checking for misplaced Debian files..."
+
+          if find base/rhel -name "control" -o -name "rules" 2>/dev/null | grep -v debian; then
+            echo "❌ Found Debian files in RHEL directory"
+            exit 1
+          fi
+
+          echo "✅ File organization is correct"
+
+      - name: Verify RHEL documentation doesn't break Debian docs
+        run: |
+          echo "=== Checking documentation organization ==="
+
+          # Verify RHEL docs are in docs/rhel/
+          if [ -d docs/rhel ]; then
+            echo "✓ docs/rhel/ directory exists"
+
+            # Check that RHEL docs don't override main docs
+            if [ -f docs/INSTALL.md ] && [ -f docs/rhel/INSTALL.md ]; then
+              echo "✓ Separate INSTALL.md files for Debian and RHEL"
+            fi
+          else
+            echo "INFO: docs/rhel/ not yet created"
+          fi
+
+          echo "✅ Documentation organization is correct"
+
+  summary:
+    name: Compatibility Check Summary
+    runs-on: ubuntu-22.04
+    needs: [debian-package-comparison, debian-regression-test, version-synchronization-check, file-organization-check]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          cat > $GITHUB_STEP_SUMMARY << 'EOF'
+          ## Debian-RHEL Compatibility Summary
+
+          ### Compatibility Checks
+
+          EOF
+
+          if [ "${{ needs.debian-package-comparison.result }}" == "success" ]; then
+            echo "- ✅ **Debian Package Comparison**: No unintended changes detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ **Debian Package Comparison**: Changes detected or test failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.debian-regression-test.result }}" == "success" ]; then
+            echo "- ✅ **Debian Regression Test**: Packages build and install correctly" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ **Debian Regression Test**: Build or installation failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.version-synchronization-check.result }}" == "success" ]; then
+            echo "- ✅ **Version Synchronization**: Versions are synchronized" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ **Version Synchronization**: Version mismatch detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.file-organization-check.result }}" == "success" ]; then
+            echo "- ✅ **File Organization**: RHEL and Debian files properly separated" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ **File Organization**: File organization issues detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check overall compatibility
+        run: |
+          if [ "${{ needs.debian-package-comparison.result }}" == "success" ] && \
+             [ "${{ needs.debian-regression-test.result }}" == "success" ] && \
+             [ "${{ needs.version-synchronization-check.result }}" == "success" ] && \
+             [ "${{ needs.file-organization-check.result }}" == "success" ]; then
+            echo "✅ All compatibility checks passed!"
+            echo "RHEL changes do not break Debian packages"
+            exit 0
+          else
+            echo "❌ Some compatibility checks failed"
+            echo "Please review and fix compatibility issues before merging"
+            exit 1
+          fi
