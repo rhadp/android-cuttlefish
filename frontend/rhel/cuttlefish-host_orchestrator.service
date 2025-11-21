@@ -1,0 +1,49 @@
+[Unit]
+Description=Cuttlefish Host Orchestrator Service
+Documentation=https://github.com/google/android-cuttlefish
+After=network.target nginx.service
+Wants=systemd-journal-gatewayd.service
+
+[Service]
+Type=simple
+User=httpcvd
+Group=cvdnetwork
+EnvironmentFile=/etc/sysconfig/cuttlefish-host_orchestrator
+
+# Prepare runtime directory
+ExecStartPre=/bin/mkdir -p /run/cuttlefish
+ExecStartPre=/bin/chown httpcvd:cvdnetwork /run/cuttlefish
+
+# Prepare artifacts directory
+ExecStartPre=/bin/mkdir -p ${orchestrator_cvd_artifacts_dir:-/var/lib/cuttlefish-common}
+ExecStartPre=/bin/chown httpcvd:cvdnetwork ${orchestrator_cvd_artifacts_dir:-/var/lib/cuttlefish-common}
+
+# Start orchestrator with configuration from environment file
+ExecStart=/usr/lib/cuttlefish-common/bin/host_orchestrator \
+    --http_port=${orchestrator_http_port:-2080} \
+    --listen_addr=${orchestrator_listen_address:-0.0.0.0} \
+    --cvd_artifacts_dir=${orchestrator_cvd_artifacts_dir:-/var/lib/cuttlefish-common} \
+    --operator_http_port=${operator_http_port:-1080}
+
+# Restart on failure
+Restart=on-failure
+RestartSec=5
+
+# Working directory for assets
+WorkingDirectory=/usr/share/cuttlefish-common/operator
+
+# Security hardening
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/cuttlefish-common /run/cuttlefish
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

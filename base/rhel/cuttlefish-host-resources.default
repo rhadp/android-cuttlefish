@@ -1,0 +1,79 @@
+# Configuration for cuttlefish-host-resources service
+# This file is sourced by /usr/lib/cuttlefish-common/bin/setup-host-resources.sh
+#
+# After modifying this file, restart the service:
+#   systemctl restart cuttlefish-host-resources.service
+
+# Maximum number of concurrent CVD instances runnable on this machine.
+# Each instance will get 4 tap interfaces (ethernet, mobile, wifi, wifiap).
+# Default: 10 (creates 40 tap interfaces total)
+#num_cvd_accounts=10
+
+# Network bridge interfaces for cuttlefish devices.
+# By default, we create and manage two bridges:
+#   - cvd-ebr (Ethernet bridge, 192.168.98.0/24)
+#   - cvd-wbr (WiFi bridge, 192.168.96.0/24)
+# These bridges will be assigned IPv4 addresses and NAT'ed using either
+# firewalld or iptables (auto-detected).
+#
+# If you specify a pre-configured bridge interface here, the script will:
+#   - Use your existing bridge instead of creating cvd-ebr/cvd-wbr
+#   - Attach tap devices to your bridge
+#   - Skip IP address assignment and NAT configuration
+#   - Allow selective IPv4/IPv6 bridging via 'ipv4_bridge' and 'ipv6_bridge'
+#
+# Leave empty to use managed bridges (recommended):
+#bridge_interface=
+
+# WiFi bridge interface name (only used if bridge_interface is empty)
+# Default: cvd-wbr
+#wifi_bridge_interface=cvd-wbr
+
+# Ethernet bridge interface name (only used if bridge_interface is empty)
+# Default: cvd-ebr
+#ethernet_bridge_interface=cvd-ebr
+
+# IPv4 bridging toggle
+# Requires 'bridge_interface' to be set, or this has no effect.
+# Default: 1 (enabled)
+#ipv4_bridge=1
+
+# IPv6 bridging toggle
+# Requires 'bridge_interface' to be set, or this has no effect.
+# Default: 1 (enabled)
+#ipv6_bridge=1
+
+# DNS servers for cuttlefish guests (IPv4)
+# Comma-separated list, no spaces after commas.
+# Default: Google Public DNS
+#dns_servers=8.8.8.8,8.8.4.4
+
+# DNS servers for cuttlefish guests (IPv6)
+# Comma-separated list, no spaces after commas.
+# Default: Google Public DNS IPv6
+#dns6_servers=2001:4860:4860::8888,2001:4860:4860::8844
+
+# IPv6 configuration for managed bridges
+# Only applies when bridge_interface is NOT set.
+# If you want IPv6 support on managed bridges, uncomment and configure:
+#
+# WiFi bridge IPv6 prefix and length:
+#wifi_ipv6_prefix=fd00:cafe:0:0::
+#wifi_ipv6_prefix_length=64
+#
+# Ethernet bridge IPv6 prefix and length:
+#ethernet_ipv6_prefix=fd00:cafe:1:0::
+#ethernet_ipv6_prefix_length=64
+
+# Advanced Options
+# ----------------
+
+# Firewall backend is auto-detected:
+#   - If firewalld is active, firewalld rules are used
+#   - If firewalld is inactive, direct iptables rules are used
+# No configuration needed.
+
+# ebtables variant (auto-detected):
+# The script prefers ebtables-legacy for broute table support,
+# falling back to ebtables if legacy is unavailable.
+# No configuration needed.

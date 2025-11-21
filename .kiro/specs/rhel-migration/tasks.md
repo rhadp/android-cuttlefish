@@ -101,8 +101,8 @@
       - Exit with error if unmapped dependencies found
       - _Requirements: 4.2, 6.3_
 
-- [ ] 3. Convert LSB init scripts to systemd units
-  - [ ] 3.1 Create cuttlefish-host-resources systemd unit
+- [x] 3. Convert LSB init scripts to systemd units
+  - [x] 3.1 Create cuttlefish-host-resources systemd unit
     - Create base/rhel/cuttlefish-host-resources.service
     - Set Type=oneshot
     - Set EnvironmentFile=/etc/sysconfig/cuttlefish-host-resources
@@ -118,8 +118,8 @@
       - RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 5.2_
   
-  - [ ] 3.2 Create setup-host-resources.sh wrapper script (complex - 371 lines in original)
-    - [ ] 3.2.1 Extract and adapt network bridge creation functions
+  - [x] 3.2 Create setup-host-resources.sh wrapper script (complex - 371 lines in original)
+    - [x] 3.2.1 Extract and adapt network bridge creation functions
       - Create base/rhel/setup-host-resources.sh
       - Source /etc/sysconfig/cuttlefish-host-resources for configuration
       - Extract create_bridge() function from init script
@@ -128,7 +128,7 @@
       - Handle IPv6 configuration if enabled
       - _Requirements: 3.1_
     
-    - [ ] 3.2.2 Extract and adapt tap interface creation functions
+    - [x] 3.2.2 Extract and adapt tap interface creation functions
       - Extract create_tap_interface() function
       - Create exactly 4 tap interfaces per CVD account:
         - cvd-etap-XX (bridged to cvd-ebr)
@@ -137,14 +137,14 @@
         - cvd-wifiap-XX (standalone with NAT, subnet varies by account range)
       - Handle subnet allocation for accounts 1-64 vs 65-128
       - _Requirements: 3.2, 3.4_
-    
-    - [ ] 3.2.3 Implement firewalld vs iptables detection
+
+    - [x] 3.2.3 Implement firewalld vs iptables detection
       - Add firewalld detection: `systemctl is-active --quiet firewalld`
       - Get default zone: `firewall-cmd --get-default-zone`
       - Set use_firewalld flag based on detection
       - _Requirements: 3.5, 3.6, 3.7_
-    
-    - [ ] 3.2.4 Implement NAT configuration for both firewall types
+
+    - [x] 3.2.4 Implement NAT configuration for both firewall types
       - If firewalld active:
         - Use `firewall-cmd --add-masquerade --zone=${default_zone} --permanent`
         - Open operator ports (HTTP/HTTPS)
@@ -155,33 +155,33 @@
         - Use `iptables -t nat -A POSTROUTING -s 192.168.98.0/24 -j MASQUERADE`
         - Save iptables rules
       - _Requirements: 3.5, 3.6, 3.7_
-    
-    - [ ] 3.2.5 Add dnsmasq startup logic
+
+    - [x] 3.2.5 Add dnsmasq startup logic
       - Start dnsmasq for cvd-ebr bridge
       - Start dnsmasq for cvd-wbr bridge
       - Configure DHCP ranges for each bridge
       - _Requirements: 3.3_
-    
-    - [ ] 3.2.6 Add kernel module loading
+
+    - [x] 3.2.6 Add kernel module loading
       - Load bridge module
       - Load vhost-net module
       - Load vhost-vsock module
       - Check if modules loaded successfully
       - _Requirements: 3.4_
-    
-    - [ ] 3.2.7 Add Docker environment handling
+
+    - [x] 3.2.7 Add Docker environment handling
       - Detect if running in Docker container
       - Adjust device permissions if in Docker
       - Handle Nvidia module loading if present
       - _Requirements: 3.1, 3.2_
-    
-    - [ ] 3.2.8 Add ebtables configuration for non-bridged mode
+
+    - [x] 3.2.8 Add ebtables configuration for non-bridged mode
       - Check if bridge_interface is configured
       - If configured, use ebtables-legacy for broute operations
       - Configure ebtables rules for traffic routing
       - _Requirements: 3.8_
-    
-    - [ ] 3.2.9 Test script with multiple num_cvd_accounts values
+
+    - [x] 3.2.9 Test script with multiple num_cvd_accounts values
       - Test with num_cvd_accounts=1
       - Test with num_cvd_accounts=10
       - Test with num_cvd_accounts=64
@@ -189,14 +189,14 @@
       - Verify correct number of tap interfaces created
       - _Requirements: 3.2_
   
-  - [ ] 3.3 Create cuttlefish-host-resources configuration file
+  - [x] 3.3 Create cuttlefish-host-resources configuration file
     - Create base/rhel/cuttlefish-host-resources.default
     - Copy configuration variables from base/debian/cuttlefish-base.cuttlefish-host-resources.default
     - Set num_cvd_accounts=10 as default
     - Document all configuration options
     - _Requirements: 5.1_
-  
-  - [ ] 3.4 Create cuttlefish-operator systemd unit
+
+  - [x] 3.4 Create cuttlefish-operator systemd unit
     - Create frontend/rhel/cuttlefish-operator.service
     - Set Type=simple
     - Set User=_cutf-operator, Group=cvdnetwork
@@ -214,21 +214,21 @@
       - RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
     - _Requirements: 3.9, 3.10, 5.2_
   
-  - [ ] 3.5 Create generate-operator-certs.sh script
+  - [x] 3.5 Create generate-operator-certs.sh script
     - Create frontend/rhel/generate-operator-certs.sh
     - Check if certificates exist in /etc/cuttlefish-common/operator/cert/
     - Generate self-signed certificates using openssl if missing
     - Set proper permissions (600 for private key)
     - Set ownership to _cutf-operator:cvdnetwork
     - _Requirements: 3.5_
-  
-  - [ ] 3.6 Create cuttlefish-operator configuration file
+
+  - [x] 3.6 Create cuttlefish-operator configuration file
     - Create frontend/rhel/cuttlefish-operator.default
     - Copy configuration variables from frontend/debian/cuttlefish-user.cuttlefish-operator.default
     - Document all configuration options (http_port, https_port, tls_cert_dir, etc.)
     - _Requirements: 5.1_
-  
-  - [ ] 3.7 Create cuttlefish-host_orchestrator systemd unit
+
+  - [x] 3.7 Create cuttlefish-host_orchestrator systemd unit
     - Create frontend/rhel/cuttlefish-host_orchestrator.service
     - Set Type=simple
     - Set User=httpcvd, Group=cvdnetwork
@@ -246,7 +246,7 @@
       - RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
     - _Requirements: 3.10, 5.2_
   
-  - [ ] 3.8 Create cuttlefish-host_orchestrator configuration file
+  - [x] 3.8 Create cuttlefish-host_orchestrator configuration file
     - Create frontend/rhel/cuttlefish-host_orchestrator.default
     - Copy configuration variables from frontend/debian/cuttlefish-orchestration.cuttlefish-host_orchestrator.default
     - Document all configuration options

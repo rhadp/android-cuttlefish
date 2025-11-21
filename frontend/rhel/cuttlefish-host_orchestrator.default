@@ -1,0 +1,50 @@
+# Configuration for cuttlefish-host_orchestrator service
+# This file is sourced by systemd unit cuttlefish-host_orchestrator.service
+#
+# After modifying this file, restart the service:
+#   systemctl restart cuttlefish-host_orchestrator.service
+
+# Network address to listen on
+# Default: localhost (127.0.0.1)
+# Set to 0.0.0.0 to allow external access
+orchestrator_listen_address=0.0.0.0
+
+# Port for HTTP access to the orchestrator web interface
+# Default: 2080
+# Change if this port conflicts with other services
+orchestrator_http_port=2081
+
+# Android Build URL for fetching Android system images
+# Default: https://androidbuildinternal.googleapis.com
+# This is used when the orchestrator downloads Android artifacts
+#orchestrator_android_build_url=https://androidbuildinternal.googleapis.com
+
+# Directory for storing CVD artifacts (Android images, configs, etc.)
+# Default: /var/lib/cuttlefish-common
+# This directory will be created with ownership set to httpcvd:cvdnetwork
+orchestrator_cvd_artifacts_dir=/var/lib/cuttlefish-common
+
+# URL for custom web UI
+# Default: "" (use built-in web UI)
+# If set, the orchestrator will fetch the web UI from this URL
+#operator_webui_url=
+
+# Port where the operator service is listening (for coordination)
+# Default: 1080
+# Should match the operator_http_port in /etc/sysconfig/cuttlefish-operator
+#operator_http_port=1080
+
+# Use GCE metadata for Build API credentials
+# Default: false
+# Set to true when running on Google Compute Engine to use instance metadata
+# for authentication with the Android Build API
+#build_api_credentials_use_gce_metadata=false
+
+# Additional Notes:
+# ----------------
+# - The orchestrator service manages multiple cuttlefish instances
+# - It provides a web interface for creating, starting, and stopping CVDs
+# - It integrates with nginx for reverse proxying (configure separately)
+# - It depends on systemd-journal-gatewayd for journal log access
+# - Firewall rules are automatically configured by cuttlefish-host-resources
+#   service to allow access to the configured port
