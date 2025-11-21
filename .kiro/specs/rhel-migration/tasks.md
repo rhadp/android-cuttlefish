@@ -13,41 +13,41 @@
     - Verify format matches expected pattern (X.Y.Z)
     - _Requirements: 9.4_
 
-- [ ] 1. Create RHEL directory structure and initial spec files
-  - [ ] 1.1 Create base/rhel/ directory structure
+- [x] 1. Create RHEL directory structure and initial spec files
+  - [x] 1.1 Create base/rhel/ directory structure
     - Create `base/rhel/` directory
     - Create `base/rhel/selinux/` subdirectory for SELinux policies
     - _Requirements: 9.2_
-  
-  - [ ] 1.2 Create frontend/rhel/ directory structure
+
+  - [x] 1.2 Create frontend/rhel/ directory structure
     - Create `frontend/rhel/` directory
     - Create `frontend/rhel/selinux/` subdirectory for SELinux policies
     - _Requirements: 9.2_
-  
-  - [ ] 1.3 Create skeleton cuttlefish-base.spec
+
+  - [x] 1.3 Create skeleton cuttlefish-base.spec
     - Add Name, Version, Release, Summary, License, URL metadata
     - Use portable version extraction: `VERSION=$(head -n1 base/debian/changelog | sed 's/.*(\([^)]*\)).*/\1/' | cut -d- -f1)`
     - Add empty %description, %prep, %build, %install, %files sections
     - _Requirements: 4.1_
-  
-  - [ ] 1.4 Create skeleton cuttlefish-integration.spec
+
+  - [x] 1.4 Create skeleton cuttlefish-integration.spec
     - Add basic metadata sections
     - _Requirements: 4.1_
-  
-  - [ ] 1.5 Create skeleton cuttlefish-defaults.spec
+
+  - [x] 1.5 Create skeleton cuttlefish-defaults.spec
     - Add basic metadata sections
     - _Requirements: 4.1_
-  
-  - [ ] 1.6 Create skeleton cuttlefish-common.spec (meta-package)
+
+  - [x] 1.6 Create skeleton cuttlefish-common.spec (meta-package)
     - Add basic metadata sections
     - _Requirements: 4.1_
-  
-  - [ ] 1.7 Create skeleton cuttlefish-user.spec
+
+  - [x] 1.7 Create skeleton cuttlefish-user.spec
     - Add basic metadata sections
     - Extract version from frontend/debian/changelog
     - _Requirements: 4.1_
-  
-  - [ ] 1.8 Create skeleton cuttlefish-orchestration.spec
+
+  - [x] 1.8 Create skeleton cuttlefish-orchestration.spec
     - Add basic metadata sections
     - _Requirements: 4.1_
 
