@@ -516,40 +516,40 @@
     - Document port labeling commands (semanage port)
     - _Requirements: 12.10_
 
-- [ ] 9. Create build system infrastructure
-  - [ ] 9.1 Create tools/buildutils/install_rhel10_deps.sh
-    - [ ] 9.1.1 Detect RHEL version and derivative
+- [x] 9. Create build system infrastructure
+  - [x] 9.1 Create tools/buildutils/install_rhel10_deps.sh
+    - [x] 9.1.1 Detect RHEL version and derivative
       - Parse /etc/os-release for ID and VERSION_ID
       - Verify RHEL 10 or compatible (Rocky Linux 10, AlmaLinux 10)
-    - [ ] 9.1.2 Set repository names based on OS version
+    - [x] 9.1.2 Set repository names based on OS version
       - For RHEL 10/Rocky 10/AlmaLinux 10: use "crb"
       - For RHEL 8/Rocky 8/AlmaLinux 8: use "powertools"
       - Handle version-specific repository naming
-    - [ ] 9.1.3 Enable required repositories
+    - [x] 9.1.3 Enable required repositories
       - Enable EPEL repository (dnf install epel-release)
       - Enable CRB/PowerTools repository (dnf config-manager --set-enabled ${repo_name})
       - Enable vbatts/bazel Copr repository (dnf copr enable vbatts/bazel)
-    - [ ] 9.1.4 Install Bazel
+    - [x] 9.1.4 Install Bazel
       - Check for .bazelversion file
       - Try installing Bazelisk from GitHub releases (primary method)
       - If Bazelisk fails, try vbatts/bazel Copr (dnf install bazel)
       - If all methods fail, exit with clear error message and manual installation instructions
       - Verify Bazel version compatibility with .bazelversion
-    - [ ] 9.1.5 Install build tools
+    - [x] 9.1.5 Install build tools
       - Install rpmbuild tools (dnf install rpm-build rpmdevtools)
       - Install SELinux policy development tools (dnf install selinux-policy-devel)
       - Install mock for clean-room builds (dnf install mock)
-    - [ ] 9.1.6 Install all build dependencies from spec files
+    - [x] 9.1.6 Install all build dependencies from spec files
       - Parse BuildRequires from all .spec files
       - Install dependencies using dnf
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
-  
-  - [ ] 9.2 Create tools/buildutils/build_rpm_packages.sh
+
+  - [x] 9.2 Create tools/buildutils/build_rpm_packages.sh
     - Detect OS type using /etc/os-release
     - Verify RHEL 10 or compatible (Rocky Linux 10, AlmaLinux 10)
     - Call install_rhel10_deps.sh
     - Setup ~/rpmbuild directory structure (rpmdev-setuptree)
-    - Extract version using portable method: `VERSION=$(head -n1 base/debian/changelog | sed 's/.*(\([^)]*\)).*/\1/' | cut -d- -f1)`
+    - Extract version using get_version.sh script: `VERSION=$(get_version.sh base/debian/changelog)`
     - Create source tarball for base/ directory with --dereference flag for Bazel symlinks
     - Create source tarball for frontend/ directory with --dereference flag
     - Copy source tarballs to ~/rpmbuild/SOURCES/
@@ -559,65 +559,13 @@
     - Run rpmlint on all packages
     - Copy built packages to output directory
     - _Requirements: 2.6, 2.7, 2.8, 9.4_
-  
-  - [ ] 9.3 Update tools/buildutils/build_packages.sh for OS detection
+
+  - [x] 9.3 Update tools/buildutils/build_packages.sh for OS detection
     - Add OS detection at the beginning (check /etc/os-release)
     - If RHEL/Rocky/AlmaLinux detected, call build_rpm_packages.sh
     - If Debian/Ubuntu detected, call existing Debian build logic
     - Exit with error for unsupported OS
     - _Requirements: 9.3_
-  - [ ] 9.1 Create cuttlefish_host_resources SELinux policy
-    - Create base/rhel/selinux/cuttlefish_host_resources.te policy module
-    - Allow network bridge creation (bridge_module, netif_create)
-    - Allow tap interface creation (tun_tap_device_create)
-    - Allow dnsmasq execution (dnsmasq_exec)
-    - Allow iptables/firewalld rule modification (iptables_exec, firewalld_dbus)
-    - Allow kernel module loading (kernel_module_load)
-    - Create base/rhel/selinux/cuttlefish_host_resources.fc file context definitions
-    - Define file contexts for /usr/lib/cuttlefish-common/bin/setup-host-resources.sh
-    - _Requirements: 12.1, 12.2, 12.3, 12.5_
-  
-  - [ ] 9.2 Create cuttlefish_operator SELinux policy
-    - Create frontend/rhel/selinux/cuttlefish_operator.te policy module
-    - Allow TLS certificate generation (cert_t, openssl_exec)
-    - Allow WebRTC signaling server operations (network_bind, tcp_socket_create)
-    - Allow socket creation in /run/cuttlefish/ (cuttlefish_var_run_t)
-    - Allow network binding on configured ports
-    - Create frontend/rhel/selinux/cuttlefish_operator.fc file context definitions
-    - Define file contexts for operator binary and certificate directory
-    - _Requirements: 12.1, 12.2, 12.3_
-  
-  - [ ] 9.3 Create cuttlefish_orchestration SELinux policy
-    - Create frontend/rhel/selinux/cuttlefish_orchestration.te policy module
-    - Allow nginx integration (nginx_read_config, nginx_connect)
-    - Allow systemd-journal-gatewayd communication (journald_read)
-    - Allow artifact directory access (/var/lib/cuttlefish-common)
-    - Allow network operations (network_bind, tcp_socket_create)
-    - Create frontend/rhel/selinux/cuttlefish_orchestration.fc file context definitions
-    - Define file contexts for host_orchestrator binary
-    - _Requirements: 12.1, 12.2, 12.3_
-  
-  - [ ] 9.4 Compile SELinux policy modules
-    - Create Makefile for compiling .te files to .pp files
-    - Use checkmodule and semodule_package commands
-    - Verify policy modules compile without errors
-    - _Requirements: 12.3_
-  
-  - [ ] 9.5 Integrate SELinux policies into spec files
-    - Add compiled .pp files to %files section of cuttlefish-base.spec
-    - Add compiled .pp files to %files section of cuttlefish-user.spec
-    - Add compiled .pp files to %files section of cuttlefish-orchestration.spec
-    - Add %post section commands to install policies (semodule -i)
-    - Add %postun section commands to remove policies (semodule -r)
-    - _Requirements: 12.3_
-  
-  - [ ] 9.6 Create SELinux troubleshooting documentation
-    - Add SELinux section to docs/rhel/TROUBLESHOOTING.md
-    - Document how to check for AVC denials (ausearch -m avc)
-    - Document how to generate policy from denials (audit2allow)
-    - Document how to temporarily disable SELinux for testing (setenforce 0)
-    - Document SELinux boolean policies
-    - _Requirements: 12.4_
 
 - [ ] 10. Checkpoint - Verify local build
   - Manually test build_rpm_packages.sh on RHEL 10 system

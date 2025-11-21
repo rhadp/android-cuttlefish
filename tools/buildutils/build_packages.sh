@@ -2,6 +2,18 @@
 
 set -e -x
 
+# Detect OS type
+function detect_os() {
+  if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS_ID="${ID}"
+  else
+    # Fallback: assume Debian-based if /etc/os-release doesn't exist
+    OS_ID="debian"
+  fi
+  echo "${OS_ID}"
+}
+
 function install_debuild_dependencies() {
   echo "Installing debuild dependencies"
   sudo apt-get update
@@ -13,11 +25,36 @@ function install_debuild_dependencies() {
 }
 
 REPO_DIR="$(realpath "$(dirname "$0")/../..")"
-INSTALL_BAZEL="$(dirname $0)/installbazel.sh"
-BUILD_PACKAGE="$(dirname $0)/build_package.sh"
+SCRIPT_DIR="$(dirname $0)"
+INSTALL_BAZEL="${SCRIPT_DIR}/installbazel.sh"
+BUILD_PACKAGE="${SCRIPT_DIR}/build_package.sh"
+BUILD_RPM="${SCRIPT_DIR}/build_rpm_packages.sh"
 
-command -v bazel &> /dev/null || sudo "${INSTALL_BAZEL}"
-install_debuild_dependencies
+# Detect operating system
+OS_TYPE=$(detect_os)
 
-"${BUILD_PACKAGE}" "${REPO_DIR}/base" $@
-"${BUILD_PACKAGE}" "${REPO_DIR}/frontend" $@
+case "${OS_TYPE}" in
+  rhel|rocky|almalinux|centos|fedora)
+    # RHEL-based system detected - use RPM build
+    echo "Detected RHEL-based system: ${OS_TYPE}"
+    echo "Using RPM build process..."
+    exec "${BUILD_RPM}" "$@"
+    ;;
+  debian|ubuntu)
+    # Debian-based system detected - use DEB build
+    echo "Detected Debian-based system: ${OS_TYPE}"
+    echo "Using DEB build process..."
+    command -v bazel &> /dev/null || sudo "${INSTALL_BAZEL}"
+    install_debuild_dependencies
+    "${BUILD_PACKAGE}" "${REPO_DIR}/base" $@
+    "${BUILD_PACKAGE}" "${REPO_DIR}/frontend" $@
+    ;;
+  *)
+    # Unsupported OS
+    echo "ERROR: Unsupported operating system: ${OS_TYPE}" >&2
+    echo "This script supports:" >&2
+    echo "  - Debian-based: debian, ubuntu" >&2
+    echo "  - RHEL-based: rhel, rocky, almalinux, centos, fedora" >&2
+    exit 1
+    ;;
+esac
