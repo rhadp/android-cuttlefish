@@ -252,58 +252,58 @@
     - Document all configuration options
     - _Requirements: 5.1_
 
-- [ ] 4. Complete cuttlefish-base RPM spec file
-  - [ ] 4.1 Add %description section
+- [x] 4. Complete cuttlefish-base RPM spec file
+  - [x] 4.1 Add %description section
     - Copy description from base/debian/control
     - _Requirements: 4.1_
-  
-  - [ ] 4.2 Add %prep section
+
+  - [x] 4.2 Add %prep section
     - Add %setup -q -n cuttlefish-base-%{version} for source extraction
     - Verify WORKSPACE file exists for Bazel builds
     - _Requirements: 4.1_
-  
-  - [ ] 4.3 Add %build section
+
+  - [x] 4.3 Add %build section
     - Set up Bazel build with RPM optflags
     - Build all C++ components using Bazel
     - Reference base/debian/rules for build commands
     - Export RPM_OPT_FLAGS and RPM_LD_FLAGS
     - _Requirements: 2.3, 4.1_
-  
-  - [ ] 4.4 Add %install section
-    - [ ] 4.4.1 Detect build architecture using %{_arch}
+
+  - [x] 4.4 Add %install section
+    - [x] 4.4.1 Detect build architecture using %{_arch}
       - Set bazel_output_path based on architecture
       - For x86_64: bazel-out/k8-opt/bin/
       - For aarch64: bazel-out/aarch64-opt/bin/
-    - [ ] 4.4.2 Create directory structure
+    - [x] 4.4.2 Create directory structure
       - Create %{buildroot}/usr/lib/cuttlefish-common/bin/
       - Create %{buildroot}%{_unitdir}/
       - Create %{buildroot}/etc/sysconfig/
       - Create %{buildroot}/usr/lib/udev/rules.d/
-    - [ ] 4.4.3 Copy binaries from architecture-specific Bazel output directory
+    - [x] 4.4.3 Copy binaries from architecture-specific Bazel output directory
       - Install binaries from ${bazel_output_path}
       - Reference base/debian/cuttlefish-base.install for file list
-    - [ ] 4.4.4 Install systemd unit file to %{buildroot}%{_unitdir}/
-    - [ ] 4.4.5 Install config file to %{buildroot}/etc/sysconfig/
-    - [ ] 4.4.6 Install udev rules to %{buildroot}/usr/lib/udev/rules.d/
+    - [x] 4.4.4 Install systemd unit file to %{buildroot}%{_unitdir}/
+    - [x] 4.4.5 Install config file to %{buildroot}/etc/sysconfig/
+    - [x] 4.4.6 Install udev rules to %{buildroot}/usr/lib/udev/rules.d/
       - Install base/debian/cuttlefish-base.udev as 99-cuttlefish-base.rules
-    - [ ] 4.4.7 Install wrapper script to %{buildroot}/usr/lib/cuttlefish-common/bin/
-    - [ ] 4.4.8 Create symlink from /usr/bin/cvd to /usr/lib/cuttlefish-common/bin/cvd
+    - [x] 4.4.7 Install wrapper script to %{buildroot}/usr/lib/cuttlefish-common/bin/
+    - [x] 4.4.8 Create symlink from /usr/bin/cvd to /usr/lib/cuttlefish-common/bin/cvd
     - _Requirements: 4.1, 4.3, 5.2, 5.3_
-  
-  - [ ] 4.5 Add %files section
+
+  - [x] 4.5 Add %files section
     - List all installed files with appropriate macros
     - Use %{_unitdir} for systemd units
     - Use %config(noreplace) for /etc/sysconfig/ files
     - Use %attr for file permissions
     - Mark binaries as executable
     - _Requirements: 4.1, 4.3, 4.4, 5.5_
-  
-  - [ ] 4.6 Add %pre section for group creation
+
+  - [x] 4.6 Add %pre section for group creation
     - Check if cvdnetwork group exists using getent
     - Create cvdnetwork group with groupadd -r (system group)
     - _Requirements: 1.2, 8.1_
-  
-  - [ ] 4.7 Add %post section
+
+  - [x] 4.7 Add %post section
     - Use %systemd_post cuttlefish-host-resources.service
     - Reload udev rules: `udevadm control --reload-rules || true`
     - Trigger udev: `udevadm trigger || true`
@@ -311,16 +311,16 @@
     - Set capabilities on binaries using setcap (if needed)
     - Reference base/debian/cuttlefish-base.postinst
     - _Requirements: 1.5, 4.5, 5.3_
-  
-  - [ ] 4.8 Add %preun section
+
+  - [x] 4.8 Add %preun section
     - Use %systemd_preun cuttlefish-host-resources.service
     - _Requirements: 4.5_
-  
-  - [ ] 4.9 Add %postun section
+
+  - [x] 4.9 Add %postun section
     - Use %systemd_postun cuttlefish-host-resources.service
     - _Requirements: 4.5, 10.2_
-  
-  - [ ] 4.10 Add %changelog section
+
+  - [x] 4.10 Add %changelog section
     - Add initial entry with current date and version
     - _Requirements: 4.1_
 
