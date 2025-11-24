@@ -14,7 +14,7 @@ concurrency:
 jobs:
   clean-install-test:
     name: Clean installation test (${{ matrix.os }})
-    runs-on: ubuntu-latest
+    runs-on: fedora-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     strategy:
@@ -156,7 +156,7 @@ jobs:
 
   multi-device-test:
     name: Multi-device configuration test (${{ matrix.os }})
-    runs-on: ubuntu-latest
+    runs-on: fedora-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     strategy:
@@ -226,7 +226,7 @@ jobs:
 
   service-functionality-test:
     name: Service functionality test (${{ matrix.os }})
-    runs-on: ubuntu-latest
+    runs-on: fedora-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     strategy:
@@ -312,7 +312,7 @@ jobs:
 
   summary:
     name: Test Summary
-    runs-on: ubuntu-latest
+    runs-on: fedora-latest
     needs: [clean-install-test, multi-device-test, service-functionality-test]
     if: always()
 

@@ -24,7 +24,7 @@ concurrency:
 jobs:
   build-matrix:
     name: Build RPM packages (${{ matrix.os }}, ${{ matrix.arch }})
-    runs-on: ubuntu-latest
+    runs-on: fedora-latest
 
     strategy:
       fail-fast: false
@@ -139,7 +139,7 @@ jobs:
 
   verify-build:
     name: Verify build completeness
-    runs-on: ubuntu-latest
+    runs-on: fedora-latest
     needs: build-matrix
 
     steps:
@@ -197,7 +197,7 @@ jobs:
 
   notify-success:
     name: Build Success Notification
-    runs-on: ubuntu-latest
+    runs-on: fedora-latest
     needs: verify-build
     if: success()
 

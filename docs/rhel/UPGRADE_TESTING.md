@@ -495,7 +495,7 @@ The package upgrade test can be integrated into CI:
 ```yaml
 # Example GitHub Actions job
 upgrade-test:
-  runs-on: ubuntu-latest
+  runs-on: fedora-latest
   container: fedora:43
   steps:
     - name: Checkout repository
