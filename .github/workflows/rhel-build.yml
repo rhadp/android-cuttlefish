@@ -34,7 +34,7 @@ jobs:
           - 'centos:stream10'
           - 'fedora:43'
         arch:
-          - 'x86_64'
+          #- 'x86_64'
           - 'aarch64'
 
     container:
